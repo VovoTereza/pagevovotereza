@@ -42,6 +42,21 @@ img,video,canvas { max-width:100%; }
   .bundle-card { padding-right:24px; padding-left:24px; }
 }
 
+/* The supplied identity retains its original proportions and transparency. */
+.brand { display:inline-flex; align-items:center; }
+.brand-logo { display:block; width:174px; max-width:100%; height:auto; object-fit:contain; }
+.site-header { min-height:108px; }
+.mobile-nav { top:100%; }
+footer .brand-logo { width:220px; }
+.admin-sidebar .brand-logo { width:200px; }
+.product-page>header { min-height:108px; }
+@media (max-width:600px) {
+  .brand-logo { width:130px; }
+  .site-header,.product-page>header { min-height:84px; }
+  .mobile-nav { top:100%; }
+  footer .brand-logo { width:190px; }
+}
+
 @media (max-width:700px) {
   main section,footer { padding-left:clamp(16px,5vw,24px); padding-right:clamp(16px,5vw,24px); }
   .section-grid,.benefits,.testimonials,.faq { gap:40px; }

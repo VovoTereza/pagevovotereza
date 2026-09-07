@@ -17,6 +17,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { BundleSelector, PaymentMethods } from './bundle-selector';
+import { BrandLogo } from '@/components/brand-logo';
 import {
   bundles,
   cartOffer,
@@ -280,7 +281,7 @@ export function Storefront() {
           className="brand"
           aria-label="Vovó Tereza, página inicial"
         >
-          <span>Vovó</span> Tereza
+          <BrandLogo priority />
         </Link>
         <nav className="desktop-nav" aria-label="Navegação principal">
           <a href="#livro">O Livro</a>
@@ -505,7 +506,7 @@ export function Storefront() {
       </main>
       <footer>
         <div className="brand">
-          <span>Vovó</span> Tereza
+          <BrandLogo />
         </div>
         <p>Receitas e conhecimentos de família, organizados com cuidado.</p>
         <nav>

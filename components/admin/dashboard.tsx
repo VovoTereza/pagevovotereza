@@ -1,4 +1,5 @@
 'use client';
+import { BrandLogo } from '@/components/brand-logo';
 import {
   BarChart3,
   BookOpen,
@@ -93,7 +94,7 @@ export function AdminDashboard({
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <div className="brand">
-          <span>Vovó</span> Tereza
+          <BrandLogo />
         </div>
         <small>ADMINISTRAÇÃO</small>
         <nav>
