@@ -29,3 +29,78 @@ footer { padding-top:56px; padding-bottom:36px; background:var(--ink); color:#ff
 @media (max-width:520px) { .admin-sidebar nav { grid-template-columns:1fr; }.admin-main { padding:20px 14px; }.metric-grid { grid-template-columns:1fr; }.admin-main>header { align-items:flex-start; }.admin-main>header a { font-size:13px; }.section-actions { align-items:flex-start; flex-direction:column; }.section-actions button { width:100%; }.status-card .secondary-button { width:100%; } }
 .product-page { min-height:100dvh; padding:0 clamp(20px,6vw,90px) 80px; }.product-page>header { min-height:82px; display:flex; justify-content:space-between; align-items:center; }.product-page>header>a:last-child { color:var(--terracotta-dark); font-weight:800; }.product-page>section { display:grid; grid-template-columns:1.08fr .92fr; gap:clamp(36px,7vw,100px); align-items:center; padding:50px 0; }.product-image { position:relative; min-height:650px; border-radius:10px 10px 70px 10px; overflow:hidden; box-shadow:var(--shadow); }.product-image img { object-fit:cover; }.product-copy>p:not(.eyebrow) { color:var(--muted); font-size:20px; }.product-copy ul { list-style:none; margin:28px 0; padding:0; }.product-copy li { display:flex; gap:10px; margin:12px 0; }.product-copy li svg { width:19px; color:var(--sage); }.product-page>aside { display:flex; gap:18px; padding:26px; border:1px solid var(--line); background:var(--paper); }.product-page>aside svg { color:var(--terracotta); }.product-page>aside p { margin:3px 0; color:var(--muted); }.legal-page { max-width:850px; min-height:100dvh; margin:0 auto; padding:70px 24px; }.legal-page>a { color:var(--terracotta-dark); font-weight:750; }.legal-page h1 { margin-top:60px; }.legal-page h2 { margin-top:44px; font-size:30px; }.legal-page p { color:var(--muted); font-size:18px; }
 @media(max-width:850px){.product-page>section{grid-template-columns:1fr}.product-image{min-height:430px}.product-copy h1{font-size:48px}}
+
+/* Responsive hardening: keep every surface usable from compact phones to wide desktops. */
+html,body { max-width:100%; overflow-x:clip; }
+img,video,canvas { max-width:100%; }
+.hero>*,.section-grid>*,.benefits>*,.testimonials>*,.faq>*,.product-page>section>*,.selected-offer>* { min-width:0; }
+.hero-copy,.section-heading,.story-copy,.product-copy,.order-box,.admin-main { overflow-wrap:anywhere; }
+.cart-drawer,.exit-modal { border:0; }
+
+@media (max-width:1200px) {
+  .recipe-card { padding-right:22px; padding-left:22px; }
+  .bundle-card { padding-right:24px; padding-left:24px; }
+}
+
+@media (max-width:700px) {
+  main section,footer { padding-left:clamp(16px,5vw,24px); padding-right:clamp(16px,5vw,24px); }
+  .section-grid,.benefits,.testimonials,.faq { gap:40px; }
+  .contents,.offers,.section-grid,.benefits,.testimonials,.faq { padding-top:72px; padding-bottom:72px; }
+  .section-heading { margin-bottom:38px; }
+  .hero-copy { order:1; }
+  .hero-visual { order:2; }
+  .hero { padding-top:42px; }
+  h1 { font-size:clamp(38px,11vw,48px); }
+  h2 { font-size:clamp(32px,9vw,42px); }
+  .hero-subtitle,.story-copy p,.section-heading>p:last-child { font-size:17px; }
+  .bundle-card { padding:34px 22px 24px; }
+  .selected-offer { display:grid; grid-template-columns:minmax(0,1fr) minmax(128px,46%); gap:10px; }
+  .selected-offer .primary-button { width:100%; max-width:none; white-space:normal; line-height:1.25; }
+  .cart-drawer { width:100%; max-width:100%; }
+  .cart-line { grid-template-columns:48px minmax(0,1fr); gap:10px 12px; }
+  .cart-line>span { grid-column:2; justify-self:start; }
+  .cart-lines,.cart-summary { padding-right:18px; padding-left:18px; }
+  .bump,.cart-offer { margin-right:18px; margin-left:18px; }
+  .faq-item p { padding-right:12px; }
+  .product-page { padding-right:16px; padding-left:16px; }
+  .product-page>header { gap:16px; }
+  .product-page>header>a:last-child { text-align:right; }
+  .product-page>section { gap:32px; padding:28px 0 42px; }
+  .product-image { min-height:clamp(280px,92vw,430px); border-bottom-right-radius:46px; }
+  .product-copy h1 { font-size:clamp(38px,12vw,48px); }
+  .product-copy>p:not(.eyebrow) { font-size:17px; }
+  .product-page>aside { align-items:flex-start; padding:20px; }
+  .status-page,.login-page { padding-right:16px; padding-left:16px; }
+  .status-card,.login-form { padding:28px 20px; }
+  .order-box { padding:18px; }
+  .order-box>div { flex-wrap:wrap; align-items:flex-start; }
+  .delivery-note { align-items:flex-start; text-align:left; }
+}
+
+@media (max-width:520px) {
+  .site-header { grid-template-columns:minmax(0,1fr) auto; gap:10px; }
+  .header-actions { justify-self:end; }
+  .hero { gap:28px; padding-bottom:64px; }
+  .hero-visual { min-height:clamp(285px,88vw,350px); }
+  .proof-strip { padding-top:18px; padding-bottom:18px; }
+  .selected-offer { margin-right:-16px; margin-left:-16px; padding-right:16px; padding-bottom:max(14px,env(safe-area-inset-bottom)); padding-left:16px; }
+  .selected-offer strong { font-size:20px; }
+  .selected-offer span,.selected-offer small { font-size:12px; }
+  .exit-modal { width:calc(100% - 24px); max-height:calc(100dvh - 24px); overflow:auto; }
+  .admin-sidebar { padding:22px 14px 14px; }
+  .admin-sidebar>small { margin-bottom:16px; }
+  .admin-sidebar nav { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(158px,70vw); grid-template-columns:none; overflow-x:auto; overscroll-behavior-inline:contain; scrollbar-width:thin; }
+  .admin-sidebar .logout { width:100%; margin-top:14px; }
+  .admin-main>header { flex-wrap:wrap; }
+  .admin-main>header h1 { font-size:clamp(34px,12vw,44px); }
+  .admin-main>header a { width:100%; justify-content:center; }
+}
+
+@media (max-width:360px) {
+  .brand { font-size:21px; }
+  .site-header { padding-right:12px; padding-left:12px; }
+  .header-actions { gap:5px; }
+  .selected-offer { grid-template-columns:minmax(0,1fr) 126px; }
+  .selected-offer .primary-button { padding-right:9px; padding-left:9px; font-size:11px; }
+  footer nav { gap:16px 20px; }
+}
