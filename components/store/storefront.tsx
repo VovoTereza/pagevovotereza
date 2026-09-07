@@ -152,6 +152,22 @@ export function Storefront() {
     localStorage.setItem('vovo-cart', JSON.stringify(cart));
   }, [cart]);
   useEffect(() => {
+    if (!drawerOpen && !exitOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [drawerOpen, exitOpen]);
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDrawerOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [drawerOpen]);
+  useEffect(() => {
     let engaged = false;
     const mark = () => {
       engaged = true;
@@ -508,6 +524,7 @@ export function Storefront() {
               open
               className="cart-drawer"
               aria-labelledby="cart-title"
+              aria-modal="true"
               initial={reduceMotion ? {} : { x: '100%' }}
               animate={{ x: 0 }}
               exit={reduceMotion ? {} : { x: '100%' }}

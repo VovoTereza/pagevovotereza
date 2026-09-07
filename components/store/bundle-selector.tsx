@@ -4,23 +4,15 @@ import Image from 'next/image';
 import { BookOpen, Check, Download, LockKeyhole, Plus, Smartphone } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { bundles, formatMoney, getBundle, getProduct } from '@/lib/catalog';
+import { PaymentIcon } from './payment-icons';
 
 export function PaymentMethods() {
   return (
     <div className="payment-methods">
       <p className="payment-security"><LockKeyhole aria-hidden="true" /> Pagamento protegido por <Image src="/images/payments/stripe.svg" alt="Stripe" width={44} height={19} unoptimized className="payment-provider-logo" /></p>
       <ul className="payment-badges" aria-label="Formas de pagamento compatíveis com a Stripe, sujeitas à disponibilidade no checkout">
-        {[
-          ['visa', 'Visa'],
-          ['mastercard', 'Mastercard'],
-          ['american-express', 'American Express'],
-          ['apple-pay', 'Apple Pay'],
-          ['google-pay', 'Google Pay'],
-        ].map(([slug, name]) => (
-          <li key={slug} className={`payment-brand payment-brand-${slug}`}>
-            <Image src={`/images/payments/${slug}.svg`} alt={name} width={44} height={44} unoptimized />
-          </li>
-        ))}
+        <li><PaymentIcon kind="card" /><span className="sr-only">Cartão</span></li>
+        <li><PaymentIcon kind="wallet" /><span className="sr-only">Carteira digital</span></li>
       </ul>
       <small>As opções disponíveis são confirmadas no checkout.</small>
     </div>
