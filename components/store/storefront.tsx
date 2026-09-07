@@ -16,6 +16,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { BundleSelector, PaymentMethods } from './bundle-selector';
 import {
   bundles,
   cartOffer,
@@ -23,7 +24,6 @@ import {
   exitOffers,
   formatMoney,
   getBundle,
-  getProduct,
   orderBump,
 } from '@/lib/catalog';
 
@@ -184,8 +184,6 @@ export function Storefront() {
     () => cart.reduce((sum, line) => sum + line.price * line.quantity, 0),
     [cart],
   );
-  const chosen = getBundle(selectedBundle)!;
-  const included = chosen.productIds.map(getProduct).filter(Boolean);
   const hasProduct = (id: string) =>
     cart.some(
       (line) =>
@@ -447,67 +445,10 @@ export function Storefront() {
           </div>
         </section>
         <section className="offers" id="ofertas">
-          <motion.div className="section-heading" {...fade}>
-            <p className="eyebrow">ESCOLHA SUA COLEÇÃO</p>
-            <h2>Comece com um caderno ou leve o acervo completo</h2>
-            <p>
-              Todos os valores abaixo são dados de demonstração e podem ser
-              alterados no painel administrativo.
-            </p>
-          </motion.div>
-          <div className="bundle-grid">
-            {bundles.map((bundle) => {
-              const selected = selectedBundle === bundle.id;
-              return (
-                <button
-                  key={bundle.id}
-                  className={`bundle-card ${selected ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedBundle(bundle.id);
-                    track('bundle_select', { bundleId: bundle.id });
-                  }}
-                  aria-pressed={selected}
-                >
-                  {bundle.badge && (
-                    <span className="bundle-badge">{bundle.badge}</span>
-                  )}
-                  <span className="radio-dot">{selected && <Check />}</span>
-                  <h3>{bundle.name}</h3>
-                  <p>{bundle.description}</p>
-                  <ul>
-                    {bundle.productIds.map((id) => (
-                      <li key={id}>
-                        <Check />
-                        {getProduct(id)?.name}
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="bundle-pricing">
-                    <del>{formatMoney(bundle.compareAtPrice)}</del>
-                    <strong>{formatMoney(bundle.price)}</strong>
-                    <span>
-                      Economize{' '}
-                      {formatMoney(bundle.compareAtPrice - bundle.price)}
-                    </span>
-                  </div>
-                  <span className="bundle-cta">{bundle.cta}</span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="selected-offer">
-            <div>
-              <span>Sua escolha</span>
-              <strong>{chosen.name}</strong>
-              <small>
-                {included.length}{' '}
-                {included.length === 1 ? 'item digital' : 'itens digitais'}
-              </small>
-            </div>
-            <button className="primary-button" onClick={() => addBundle()}>
-              {chosen.cta}
-            </button>
-          </div>
+          <BundleSelector value={selectedBundle} onChange={(bundleId) => {
+            setSelectedBundle(bundleId);
+            track('bundle_select', { bundleId });
+          }} onBuy={() => addBundle()} />
         </section>
         <section className="testimonials" id="depoimentos">
           <div>
@@ -717,6 +658,7 @@ export function Storefront() {
                         ? 'PREPARANDO PAGAMENTO...'
                         : 'IR PARA O PAGAMENTO'}
                     </button>
+                    <PaymentMethods />
                   </div>
                 </>
               )}

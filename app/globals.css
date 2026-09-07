@@ -104,3 +104,103 @@ img,video,canvas { max-width:100%; }
   .selected-offer .primary-button { padding-right:9px; padding-left:9px; font-size:11px; }
   footer nav { gap:16px 20px; }
 }
+
+/* Stacked collection selector, adapted to the Vovó Tereza palette. */
+.offers { background:var(--paper); scroll-margin-top:80px; }
+.collection-picker { max-width:980px; margin-inline:auto; }
+.collection-intro h2 { max-width:850px; font-size:clamp(32px,3.5vw,48px); line-height:1.14; }
+.collection-subtitle { margin:16px 0; color:var(--muted); font-size:18px; }
+.collection-price { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin:24px 0; }
+.collection-price del { color:var(--muted); font-size:22px; }
+.collection-price strong { color:var(--sage); font-size:28px; line-height:1.2; }
+.collection-price>span { padding:5px 12px; border-radius:7px; background:var(--sage); color:var(--white); font-size:13px; font-weight:800; }
+.collection-benefits { display:flex; flex-wrap:wrap; gap:10px; list-style:none; margin:0 0 26px; padding:22px 0 0; border-top:1px solid var(--line); }
+.collection-benefits li { display:flex; align-items:center; gap:7px; padding:5px 12px; border:1px dashed var(--sage); border-radius:999px; font-size:14px; line-height:1.5; }
+.collection-benefits svg { width:18px; height:18px; flex-shrink:0; color:var(--sage); }
+.collection-options { gap:14px; }
+.collection-option { min-width:0; border:1px solid var(--sage); border-radius:12px; background:var(--white); box-shadow:0 4px 12px rgba(45,38,31,.06); transition:background .18s; }
+.collection-option.is-selected { background:#f0f1e9; }
+.collection-option:focus-within { outline:3px solid var(--mustard); outline-offset:3px; }
+.collection-option-header { display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:start; gap:12px; min-height:106px; padding:24px 22px; cursor:pointer; }
+.collection-radio[data-slot] { width:24px; height:24px; margin-top:3px; border:2px solid #a0b39a; background:transparent; color:var(--sage); box-shadow:none; }
+.collection-radio[data-checked] { border-color:var(--sage); background:transparent; }
+.collection-radio [data-slot="radio-group-indicator"]>span { width:14px; height:14px; background:var(--sage); }
+.collection-option-copy { min-width:0; display:grid; gap:6px; }
+.collection-option-title { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; color:var(--ink); font-size:21px; font-weight:800; line-height:1.35; }
+.collection-option-badge { display:inline-block; padding:3px 8px; border:1px solid var(--sage); border-radius:6px; background:var(--white); color:var(--sage); font-size:11px; font-weight:800; letter-spacing:.025em; line-height:1.5; }
+.collection-option-description { color:var(--muted); font-size:16px; line-height:1.5; }
+.collection-option-price { display:grid; justify-items:end; align-self:center; padding-left:10px; white-space:nowrap; line-height:1.35; }
+.collection-option-price strong { color:var(--sage); font-size:21px; }
+.collection-option-price del { color:var(--muted); font-size:16px; }
+.collection-expanded { padding:0 16px; }
+.collection-items-heading { display:flex; justify-content:space-between; gap:12px; margin:0 12px 8px; color:var(--muted); font-size:10px; font-weight:750; letter-spacing:.07em; }
+.collection-items { margin:0; padding:0; border:1px solid #b3c1ad; border-radius:10px; list-style:none; }
+.collection-item { position:relative; display:grid; grid-template-columns:54px minmax(0,1fr) auto; align-items:center; gap:24px; min-height:116px; padding:22px 26px; }
+.collection-item+.collection-item { border-top:1px solid #b3c1ad; }
+.collection-thumbnail { width:54px; height:70px; position:relative; overflow:hidden; border-radius:3px; background:var(--cream); }
+.collection-thumbnail img { width:100%; height:100%; object-fit:cover; }
+.collection-thumbnail>span { position:absolute; right:3px; bottom:3px; padding:0 4px; background:var(--paper); color:var(--ink); font-size:11px; font-weight:800; }
+.collection-item-copy { min-width:0; display:grid; gap:6px; }
+.collection-item-copy strong { font:700 20px/1.3 Georgia,serif; }
+.collection-item-copy small { color:var(--muted); font-size:12px; }
+.collection-item-value { white-space:nowrap; color:var(--sage); font-size:17px; font-weight:750; }
+.collection-plus { position:absolute; z-index:1; bottom:-11px; left:50%; width:21px; height:21px; display:grid; place-items:center; border:1px solid #9bb18f; border-radius:50%; background:#f0f1e9; color:var(--sage); transform:translateX(-50%); }
+.collection-plus svg { width:13px; height:13px; }
+.collection-included { display:flex; align-items:center; gap:10px; margin:18px -16px 0; padding:17px 22px; border-radius:0 0 12px 12px; background:var(--white); font-size:13px; line-height:1.5; }
+.collection-included-check { display:grid; place-items:center; flex:0 0 20px; height:20px; border-radius:4px; background:var(--sage); color:white; }
+.collection-included-check svg { width:15px; height:15px; }
+.collection-included>svg { width:20px; height:20px; margin-left:auto; flex-shrink:0; color:var(--sage); }
+.collection-purchase { margin-top:20px; }
+.collection-selection { display:flex; align-items:center; gap:8px; margin:0 0 22px; color:var(--terracotta-dark); font-size:14px; }
+.collection-selection svg { width:18px; height:18px; flex-shrink:0; }
+.collection-buy { width:100%; gap:14px; min-height:62px; font-size:19px; letter-spacing:0; }
+.collection-buy>span { padding-left:14px; border-left:1px solid rgba(255,255,255,.4); white-space:nowrap; }
+.payment-methods { display:grid; justify-items:center; gap:10px; margin-top:16px; text-align:center; }
+.payment-methods .payment-security { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:5px; margin:0; color:var(--muted); font-size:12px; }
+.payment-security svg { width:14px; height:14px; }
+.payment-security strong { color:var(--ink); font-size:18px; letter-spacing:-.7px; }
+.payment-badges { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; list-style:none; padding:0; margin:0; }
+.payment-badges li { display:flex; align-items:center; justify-content:center; min-width:51px; height:32px; padding:0 7px; border:1px solid #e0dfdc; border-radius:4px; background:#fff; line-height:1; }
+.payment-badges .payment-visa { background:#1535aa; color:#fff; font-size:18px; font-style:italic; font-weight:900; }
+.payment-badges .payment-mastercard { padding:0 3px; background:#212121; }
+.payment-mastercard svg { width:44px; height:28px; }
+.payment-badges .payment-amex { background:#0875bd; color:white; font-size:8px; font-weight:900; }
+.payment-wallet { color:#262626; font-size:12px; font-weight:700; }
+.payment-methods>small { color:var(--muted); font-size:11px; }
+.cart-drawer { overflow-y:auto; overscroll-behavior:contain; }
+.cart-drawer>header,.cart-summary,.bump,.cart-offer { flex-shrink:0; }
+.cart-lines { flex-shrink:0; }
+
+@media (max-width:600px) {
+  .collection-subtitle { font-size:16px; }
+  .collection-option-header { grid-template-columns:22px minmax(0,1fr) auto; gap:9px; padding:20px 14px; }
+  .collection-option-title { font-size:17px; gap:6px; }
+  .collection-option-description { font-size:13px; }
+  .collection-radio[data-slot] { width:22px; height:22px; margin-top:1px; }
+  .collection-option-price { padding-left:0; align-self:start; }
+  .collection-option-price strong { font-size:17px; }
+  .collection-option-price del { font-size:13px; }
+  .collection-option-badge { font-size:10px; }
+  .collection-expanded { padding:0 10px; }
+  .collection-items-heading { margin-inline:5px; font-size:9px; }
+  .collection-item { grid-template-columns:40px minmax(0,1fr) auto; gap:10px; min-height:104px; padding:16px 12px; }
+  .collection-thumbnail { width:40px; height:56px; }
+  .collection-item-copy strong { font-size:16px; }
+  .collection-item-copy small { font-size:10px; }
+  .collection-item-value { font-size:13px; }
+  .collection-included { margin-inline:-10px; padding:15px 14px; font-size:12px; }
+  .collection-benefits { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .collection-benefits li { gap:5px; padding:6px 8px; font-size:12px; }
+  .collection-benefits svg { width:15px; height:15px; }
+  .collection-selection { font-size:13px; }
+  .collection-buy { gap:10px; padding-inline:12px; min-height:58px; font-size:15px; }
+  .collection-buy>span { padding-left:10px; }
+}
+@media (max-width:360px) {
+  .collection-option-header { grid-template-columns:22px minmax(0,1fr); }
+  .collection-option-price { grid-column:2; display:flex; flex-wrap:wrap; gap:8px; align-items:baseline; }
+  .collection-item { grid-template-columns:36px minmax(0,1fr); }
+  .collection-thumbnail { width:36px; grid-row:1/3; }
+  .collection-item-value { grid-column:2; }
+  .collection-buy { font-size:13px; }
+}
