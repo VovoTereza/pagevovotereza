@@ -164,9 +164,8 @@ export function AdminDashboard({
               <div className="admin-empty">
                 <BarChart3 />
                 <p>
-                  O gráfico será preenchido conforme pagamentos e eventos reais
-                  forem registrados. Dados de demonstração não entram nas
-                  métricas.
+                  As métricas dependem dos pagamentos e eventos registrados.
+                  Ainda não há histórico disponível para este gráfico.
                 </p>
               </div>
             </section>

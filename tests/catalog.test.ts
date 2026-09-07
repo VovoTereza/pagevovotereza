@@ -12,7 +12,9 @@ import {
 test('todos os bundles possuem produtos válidos e economia real', () => {
   for (const bundle of bundles) {
     assert.ok(bundle.productIds.every((id) => getProduct(id)));
-    assert.ok(bundle.compareAtPrice > bundle.price);
+    const standaloneTotal = bundle.productIds.reduce((total, id) => total + getProduct(id)!.price, 0);
+    assert.equal(bundle.compareAtPrice, standaloneTotal);
+    assert.ok(bundle.compareAtPrice >= bundle.price);
     assert.ok(bundle.price > 0);
   }
 });

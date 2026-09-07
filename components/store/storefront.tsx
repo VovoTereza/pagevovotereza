@@ -10,7 +10,6 @@ import {
   Plus,
   ShoppingBag,
   Sparkles,
-  Star,
   X,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -59,7 +58,7 @@ const benefits = [
 const faqs = [
   [
     'O produto é físico ou digital?',
-    'É uma coleção digital. Você recebe o acesso por email depois da confirmação do pagamento.',
+    'É uma coleção digital. O acesso aos arquivos fica disponível na página do pedido após a confirmação do pagamento.',
   ],
   [
     'Consigo abrir no celular?',
@@ -75,7 +74,7 @@ const faqs = [
   ],
   [
     'Quando recebo?',
-    'O acesso é liberado após a confirmação do pagamento. Você também recebe as instruções no email informado.',
+    'Após a confirmação do pagamento, os links para baixar os arquivos ficam disponíveis na página do pedido.',
   ],
   [
     'Existe conteúdo sobre babosa?',
@@ -287,7 +286,6 @@ export function Storefront() {
           <a href="#livro">O Livro</a>
           <a href="#recebe">O que você recebe</a>
           <a href="#receitas">Receitas</a>
-          <a href="#depoimentos">Depoimentos</a>
           <a href="#duvidas">Dúvidas</a>
         </nav>
         <div className="header-actions">
@@ -327,10 +325,6 @@ export function Storefront() {
             <p className="eyebrow">{config.heroBadge}</p>
             <h1>{config.heroTitle}</h1>
             <p className="hero-subtitle">{config.heroSubtitle}</p>
-            <div className="rating-line">
-              <span aria-label="5 de 5 estrelas">★★★★★</span>
-              <strong>Amostra de demonstração</strong>
-            </div>
             <div className="hero-price">
               <small>A partir de</small>
               <strong>{formatMoney(bundles[0].price)}</strong>
@@ -371,7 +365,7 @@ export function Storefront() {
             <Check /> Leitura confortável
           </span>
           <span>
-            <Check /> Acesso imediato
+            <Check /> Formato digital
           </span>
           <span>
             <Check /> Receitas organizadas
@@ -380,18 +374,18 @@ export function Storefront() {
         <motion.section className="story section-grid" id="receitas" {...fade}>
           <div>
             <p className="eyebrow">O CADERNO ESQUECIDO</p>
-            <h2>Antes de virar arquivo, cada receita viveu em uma folha</h2>
+            <h2>A inspiração vem dos cadernos de receitas de família</h2>
           </div>
           <div className="story-copy">
             <p>
-              Tereza passou anos guardando receitas entre cadernos, recortes e
-              papéis que ficavam na cozinha. Algumas tinham medidas precisas.
-              Outras traziam só uma lembrança: “assar até dourar”.
+              A Vovó Tereza nasce da ideia de valorizar a cozinha de casa:
+              receitas compartilhadas, ingredientes conhecidos e o cuidado
+              de preparar uma refeição.
             </p>
             <p>
-              O trabalho desta coleção foi organizar esse material sem apagar o
-              jeito simples de explicar. Assim, o conhecimento continua próximo,
-              mas agora cabe no celular e pode ser encontrado com facilidade.
+              Essa inspiração orienta a coleção de cadernos digitais, com temas
+              como bolos, sobremesas, economia na cozinha e ingredientes
+              tradicionais.
             </p>
           </div>
         </motion.section>
@@ -451,25 +445,6 @@ export function Storefront() {
             track('bundle_select', { bundleId });
           }} onBuy={() => addBundle()} />
         </section>
-        <section className="testimonials" id="depoimentos">
-          <div>
-            <p className="eyebrow">DEPOIMENTOS</p>
-            <h2>Este espaço só publica avaliações verificadas</h2>
-            <p>
-              Enquanto a loja está em demonstração, nenhum número de compradores
-              ou relato fictício é apresentado como real.
-            </p>
-          </div>
-          <blockquote>
-            <Star />
-            <p>
-              Depois das primeiras vendas, depoimentos aprovados no painel
-              aparecem aqui com nome, cidade, nota e indicação de compra
-              verificada.
-            </p>
-            <cite>Estado vazio seguro</cite>
-          </blockquote>
-        </section>
         <section className="faq" id="duvidas">
           <div>
             <p className="eyebrow">DÚVIDAS FREQUENTES</p>
@@ -513,10 +488,9 @@ export function Storefront() {
           <Link href="/privacidade">Privacidade</Link>
           <Link href="/termos">Termos</Link>
           <Link href="/reembolso">Reembolso</Link>
-          <a href="mailto:contato@vovotereza.com.br">Contato</a>
         </nav>
         <small>
-          © {new Date().getFullYear()} Vovó Tereza. Conteúdo de demonstração.
+          © {new Date().getFullYear()} Vovó Tereza. Todos os direitos reservados.
         </small>
       </footer>
       <AnimatePresence>

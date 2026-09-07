@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { BookOpen, Check, LockKeyhole, Mail, Plus, Smartphone } from 'lucide-react';
+import { BookOpen, Check, Download, LockKeyhole, Plus, Smartphone } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { bundles, formatMoney, getBundle, getProduct } from '@/lib/catalog';
 
@@ -34,15 +34,15 @@ export function BundleSelector({ value, onChange, onBuy }: {
         <h2 id="collection-heading">Receitas de família, para guardar e fazer de novo.</h2>
         <p className="collection-subtitle">Escolha o caderno que combina com a sua cozinha.</p>
         <div className="collection-price" aria-live="polite" aria-atomic="true">
-          <del>{formatMoney(chosen.compareAtPrice)}</del>
+          {chosen.compareAtPrice > chosen.price && <del aria-label="Soma dos preços avulsos">{formatMoney(chosen.compareAtPrice)}</del>}
           <strong>{formatMoney(chosen.price)}</strong>
-          <span>ECONOMIZE {formatMoney(chosen.compareAtPrice - chosen.price)}</span>
+          {chosen.compareAtPrice > chosen.price && <span>ECONOMIZE {formatMoney(chosen.compareAtPrice - chosen.price)} EM RELAÇÃO AOS AVULSOS</span>}
         </div>
         <ul className="collection-benefits" aria-label="Benefícios da coleção">
           <li><Check aria-hidden="true"/>Receitas organizadas</li>
           <li><BookOpen aria-hidden="true"/>Passo a passo simples</li>
           <li><Smartphone aria-hidden="true"/>Leia no celular</li>
-          <li><Mail aria-hidden="true"/>Acesso por e-mail</li>
+          <li><Download aria-hidden="true"/>Arquivos para baixar</li>
         </ul>
       </div>
       <RadioGroup className="collection-options" value={value} onValueChange={onChange} aria-labelledby="collection-heading">
@@ -56,7 +56,7 @@ export function BundleSelector({ value, onChange, onBuy }: {
                   <span className="collection-option-title">{bundle.name}{bundle.badge && <span className="collection-option-badge">{bundle.recommended ? 'RECOMENDADO' : bundle.badge}</span>}</span>
                   <span className="collection-option-description" id={`collection-description-${bundle.id}`}>{bundle.productIds.length === 1 ? 'O livro principal. Acesso digital após confirmação.' : `${bundle.productIds.length} cadernos · economize ${Math.round((1 - bundle.price / bundle.compareAtPrice) * 100)}% na coleção`}</span>
                 </span>
-                <span className="collection-option-price"><strong>{formatMoney(bundle.price)}</strong><del>{formatMoney(bundle.compareAtPrice)}</del></span>
+                  <span className="collection-option-price"><strong>{formatMoney(bundle.price)}</strong>{bundle.compareAtPrice > bundle.price && <del aria-label="Soma dos preços avulsos">{formatMoney(bundle.compareAtPrice)}</del>}</span>
               </label>
               {selected && (
                 <div className="collection-expanded">
