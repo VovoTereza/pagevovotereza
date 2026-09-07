@@ -1,0 +1,171 @@
+import { env } from 'cloudflare:workers';
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
+import { eq } from 'drizzle-orm';
+import { getDb } from '@/db';
+import { orderItems, orders, processedWebhooks } from '@/db/schema';
+import { cartOffer, getBundle, getProduct, orderBump } from '@/lib/catalog';
+import { getStripe } from '@/lib/server/stripe';
+
+type CartInput = {
+  kind: 'bundle' | 'product';
+  id: string;
+  quantity: number;
+  source?: 'order_bump' | 'cart_offer' | 'exit_offer';
+};
+
+async function completeCheckout(session: Stripe.Checkout.Session) {
+  const db = getDb();
+  const orderId =
+    session.metadata?.orderId ||
+    session.client_reference_id ||
+    crypto.randomUUID();
+  const orderNumber =
+    session.metadata?.orderNumber ||
+    `VT-${Date.now().toString(36).toUpperCase()}`;
+  const cart = JSON.parse(session.metadata?.cart || '[]') as CartInput[];
+  const total = session.amount_total || 0;
+  const email =
+    session.customer_details?.email || session.customer_email || null;
+  const name = session.customer_details?.name || null;
+  const token = crypto.randomUUID();
+  await db
+    .insert(orders)
+    .values({
+      id: orderId,
+      orderNumber,
+      customerName: name,
+      customerEmail: email,
+      subtotal: session.amount_subtotal || total,
+      discount: (session.amount_subtotal || total) - total,
+      total,
+      currency: (session.currency || 'brl').toUpperCase(),
+      stripePaymentIntentId:
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : null,
+      stripeCheckoutSessionId: session.id,
+      stripeCustomerId:
+        typeof session.customer === 'string' ? session.customer : null,
+      status: 'confirmed',
+      paymentStatus: 'paid',
+      downloadToken: token,
+    })
+    .onConflictDoUpdate({
+      target: orders.id,
+      set: {
+        customerName: name,
+        customerEmail: email,
+        total,
+        stripeCheckoutSessionId: session.id,
+        status: 'confirmed',
+        paymentStatus: 'paid',
+        downloadToken: token,
+        updatedAt: new Date(),
+      },
+    });
+  const rows: (typeof orderItems.$inferInsert)[] = [];
+  for (const item of cart) {
+    if (item.kind === 'bundle') {
+      const bundle = getBundle(item.id);
+      if (!bundle) continue;
+      for (const productId of bundle.productIds)
+        rows.push({
+          id: crypto.randomUUID(),
+          orderId,
+          productId,
+          bundleId: bundle.id,
+          titleSnapshot: getProduct(productId)?.name || bundle.name,
+          quantity: item.quantity,
+          unitPrice: 0,
+          total: 0,
+          itemType: 'bundle_product',
+        });
+    } else {
+      const product = getProduct(item.id);
+      if (product) {
+        let price = product.price;
+        if (item.source === 'order_bump' && item.id === orderBump.productId)
+          price = orderBump.price;
+        if (item.source === 'cart_offer' && item.id === cartOffer.productId)
+          price = cartOffer.price;
+        rows.push({
+          id: crypto.randomUUID(),
+          orderId,
+          productId: product.id,
+          titleSnapshot: product.name,
+          quantity: item.quantity,
+          unitPrice: price,
+          total: price * item.quantity,
+          itemType: item.source || 'product',
+        });
+      }
+    }
+  }
+  if (rows.length) await db.insert(orderItems).values(rows);
+}
+
+export async function POST(request: NextRequest) {
+  if (!env.STRIPE_WEBHOOK_SECRET)
+    return NextResponse.json(
+      { error: 'Webhook não configurado.' },
+      { status: 503 },
+    );
+  const signature = request.headers.get('stripe-signature');
+  if (!signature)
+    return NextResponse.json({ error: 'Assinatura ausente.' }, { status: 400 });
+  let event: Stripe.Event;
+  try {
+    event = await getStripe().webhooks.constructEventAsync(
+      await request.text(),
+      signature,
+      env.STRIPE_WEBHOOK_SECRET,
+    );
+  } catch {
+    return NextResponse.json(
+      { error: 'Assinatura inválida.' },
+      { status: 400 },
+    );
+  }
+  const db = getDb();
+  try {
+    await db
+      .insert(processedWebhooks)
+      .values({ id: event.id, type: event.type });
+  } catch {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+  if (
+    event.type === 'checkout.session.completed' ||
+    event.type === 'checkout.session.async_payment_succeeded'
+  )
+    await completeCheckout(event.data.object);
+  if (
+    event.type === 'checkout.session.async_payment_failed' ||
+    event.type === 'checkout.session.expired'
+  )
+    await db
+      .update(orders)
+      .set({
+        status: event.type.endsWith('expired') ? 'expired' : 'payment_failed',
+        paymentStatus: 'failed',
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.stripeCheckoutSessionId, event.data.object.id));
+  if (event.type === 'charge.refunded') {
+    const intent =
+      typeof event.data.object.payment_intent === 'string'
+        ? event.data.object.payment_intent
+        : '';
+    if (intent)
+      await db
+        .update(orders)
+        .set({
+          status: 'refunded',
+          paymentStatus: 'refunded',
+          updatedAt: new Date(),
+        })
+        .where(eq(orders.stripePaymentIntentId, intent));
+  }
+  return NextResponse.json({ received: true });
+}

@@ -1,0 +1,2 @@
+import Link from 'next/link';
+export default function Terms(){return <main className="legal-page"><Link href="/">← Voltar</Link><h1>Termos de uso</h1><p>Os produtos são digitais e destinados ao uso pessoal do comprador. É proibida a redistribuição dos arquivos sem autorização.</p><h2>Conteúdo</h2><p>Receitas e informações sobre ingredientes possuem finalidade culinária e cultural. O material não oferece diagnóstico, tratamento ou orientação médica.</p><h2>Pagamento e acesso</h2><p>O acesso é liberado somente após a confirmação definitiva do pagamento.</p></main>}
