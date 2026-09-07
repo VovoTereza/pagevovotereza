@@ -173,14 +173,11 @@ footer .brand-logo { width:220px; }
 .payment-methods { display:grid; justify-items:center; gap:10px; margin-top:16px; text-align:center; }
 .payment-methods .payment-security { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:5px; margin:0; color:var(--muted); font-size:12px; }
 .payment-security svg { width:14px; height:14px; }
-.payment-security strong { color:var(--ink); font-size:18px; letter-spacing:-.7px; }
-.payment-badges { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; list-style:none; padding:0; margin:0; }
-.payment-badges li { display:flex; align-items:center; justify-content:center; min-width:51px; height:32px; padding:0 7px; border:1px solid #e0dfdc; border-radius:4px; background:#fff; line-height:1; }
-.payment-badges .payment-visa { background:#1535aa; color:#fff; font-size:18px; font-style:italic; font-weight:900; }
-.payment-badges .payment-mastercard { padding:0 3px; background:#212121; }
-.payment-mastercard svg { width:44px; height:28px; }
-.payment-badges .payment-amex { background:#0875bd; color:white; font-size:8px; font-weight:900; }
-.payment-wallet { color:#262626; font-size:12px; font-weight:700; }
+.payment-provider-logo { width:44px; height:19px; object-fit:contain; margin-left:2px; }
+.payment-badges { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); width:min(100%,340px); gap:8px; list-style:none; padding:0; margin:0; }
+.payment-badges li { display:flex; align-items:center; justify-content:center; min-width:0; height:40px; border:1px solid var(--line); border-radius:5px; background:var(--white); }
+.payment-brand img { display:block; width:44px; height:44px; max-width:100%; object-fit:contain; }
+.payment-brand-american-express img { width:29px; height:29px; }
 .payment-methods>small { color:var(--muted); font-size:11px; }
 .cart-drawer { overflow-y:auto; overscroll-behavior:contain; }
 .cart-drawer>header,.cart-summary,.bump,.cart-offer { flex-shrink:0; }

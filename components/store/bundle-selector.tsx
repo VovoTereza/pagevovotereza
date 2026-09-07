@@ -8,13 +8,19 @@ import { bundles, formatMoney, getBundle, getProduct } from '@/lib/catalog';
 export function PaymentMethods() {
   return (
     <div className="payment-methods">
-      <p className="payment-security"><LockKeyhole aria-hidden="true" /> Pagamento protegido por <strong>stripe</strong></p>
+      <p className="payment-security"><LockKeyhole aria-hidden="true" /> Pagamento protegido por <Image src="/images/payments/stripe.svg" alt="Stripe" width={44} height={19} unoptimized className="payment-provider-logo" /></p>
       <ul className="payment-badges" aria-label="Formas de pagamento compatíveis com a Stripe, sujeitas à disponibilidade no checkout">
-        <li className="payment-visa" aria-label="Visa">VISA</li>
-        <li className="payment-mastercard" aria-label="Mastercard"><svg viewBox="0 0 48 30" aria-hidden="true"><circle cx="18" cy="15" r="11" fill="#eb001b"/><circle cx="30" cy="15" r="11" fill="#f79e1b" fillOpacity=".94"/></svg></li>
-        <li className="payment-amex" aria-label="American Express">AMERICAN<br/>EXPRESS</li>
-        <li className="payment-wallet">Apple Pay</li>
-        <li className="payment-wallet">Google Pay</li>
+        {[
+          ['visa', 'Visa'],
+          ['mastercard', 'Mastercard'],
+          ['american-express', 'American Express'],
+          ['apple-pay', 'Apple Pay'],
+          ['google-pay', 'Google Pay'],
+        ].map(([slug, name]) => (
+          <li key={slug} className={`payment-brand payment-brand-${slug}`}>
+            <Image src={`/images/payments/${slug}.svg`} alt={name} width={44} height={44} unoptimized />
+          </li>
+        ))}
       </ul>
       <small>As opções disponíveis são confirmadas no checkout.</small>
     </div>
