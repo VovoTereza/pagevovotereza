@@ -1506,24 +1506,6 @@ footer small {
   color: var(--muted);
   text-align: center;
 }
-.login-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 12px;
-  text-align: center;
-}
-.login-divider::before,
-.login-divider::after {
-  content: '';
-  height: 1px;
-  flex: 1;
-  background: var(--line);
-}
-.login-divider span {
-  flex: 0 0 auto;
-}
 .admin-shell {
   min-height: 100dvh;
   display: grid;

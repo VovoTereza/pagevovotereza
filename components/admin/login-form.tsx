@@ -1,7 +1,6 @@
 'use client';
 import { Eye, EyeOff, LockKeyhole } from 'lucide-react';
 import { SyntheticEvent, useState } from 'react';
-import Link from 'next/link';
 
 export function LoginForm() {
   const [show, setShow] = useState(false);
@@ -36,10 +35,6 @@ export function LoginForm() {
       <p className="eyebrow">ÁREA RESTRITA</p>
       <h1>Painel Vovó Tereza</h1>
       <p>Entre para administrar produtos, ofertas, conteúdo e pedidos.</p>
-      <Link className="primary-button" href="/signin-with-chatgpt?return_to=%2Fadmin">
-        ENTRAR COM SEGURANÇA
-      </Link>
-      <div className="login-divider"><span>ou use as credenciais do servidor</span></div>
       <label>
         Email
         <input
