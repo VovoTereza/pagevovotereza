@@ -3705,17 +3705,25 @@ footer .brand-logo {
 }
 .cart-drawer > header.cart-banner .icon-button {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  border-color: rgba(28, 25, 20, 0.22);
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--ink);
-  backdrop-filter: blur(8px);
+  top: 10px;
+  right: 10px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border-color: rgba(28, 25, 20, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+  color: rgba(28, 25, 20, 0.78);
+  backdrop-filter: blur(6px);
+}
+.cart-drawer > header.cart-banner .icon-button svg {
+  width: 17px;
+  height: 17px;
 }
 .cart-drawer > header.cart-banner .icon-button:hover {
-  border-color: var(--rust);
-  background: #fff;
-  color: var(--rust);
+  border-color: rgba(145, 65, 39, 0.36);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--terracotta-dark);
 }
 .bump,
 .cart-offer {
