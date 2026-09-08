@@ -5,6 +5,17 @@ import { join } from 'node:path';
 const root = process.cwd();
 const output = join(root, '.vercel', 'output');
 const functionDir = join(output, 'functions', 'index.func');
+const runtimeVariableNames = [
+  'NEXT_PUBLIC_SITE_URL',
+  'ADMIN_EMAIL',
+  'ADMIN_PASSWORD',
+  'ADMIN_SESSION_SECRET',
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'SUPABASE_STORAGE_BUCKET',
+];
 
 const build = spawnSync('npm', ['run', 'build'], {
   cwd: root,
@@ -29,6 +40,11 @@ await writeFile(
     handler: 'index.mjs',
     launcherType: 'Nodejs',
     supportsResponseStreaming: false,
+    environment: Object.fromEntries(
+      runtimeVariableNames.flatMap((name) =>
+        process.env[name] ? [[name, process.env[name]]] : [],
+      ),
+    ),
   }),
 );
 
