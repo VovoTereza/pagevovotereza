@@ -648,12 +648,13 @@ export function AdminDashboard({
             <button
               type="button"
               className="admin-menu-toggle"
+              aria-label={mobileNavOpen ? 'Fechar menu' : 'Abrir menu'}
               aria-expanded={mobileNavOpen}
               aria-controls="admin-navigation"
               onClick={() => setMobileNavOpen((current) => !current)}
             >
               {mobileNavOpen ? <X /> : <Menu />}
-              <span>Menu</span>
+              <span className="sr-only">{mobileNavOpen ? 'Fechar menu' : 'Abrir menu'}</span>
             </button>
           </div>
           <nav id="admin-navigation">

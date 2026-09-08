@@ -5835,6 +5835,23 @@ footer .brand-logo {
 
 /* Compact, disclosure-based administration navigation on phones and tablets. */
 @media (max-width: 800px) {
+  .admin-sidebar-head {
+    grid-template-columns: 108px minmax(0, 1fr) 48px;
+    gap: 10px;
+  }
+  .admin-sidebar .brand-logo {
+    width: 108px;
+    max-width: 108px;
+  }
+  .admin-sidebar-title {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .admin-menu-toggle {
+    width: 48px;
+    min-width: 48px;
+    padding: 0;
+  }
   .admin-sidebar nav {
     display: none;
     grid-auto-flow: row;
@@ -5849,5 +5866,18 @@ footer .brand-logo {
     min-height: 48px;
     font-size: 13px;
     white-space: normal;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-sidebar-head {
+    grid-template-columns: 92px minmax(0, 1fr) 48px;
+  }
+  .admin-sidebar .brand-logo {
+    width: 92px;
+    max-width: 92px;
+  }
+  .admin-sidebar-title small {
+    display: none;
   }
 }
