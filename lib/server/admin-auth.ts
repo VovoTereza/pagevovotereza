@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { cookies } from 'next/headers';
+import { getChatGPTUser } from '@/app/chatgpt-auth';
 
 const COOKIE = 'vovo_admin_session';
 const encoder = new TextEncoder();
@@ -26,5 +27,9 @@ export async function verifyAdminSession(raw?: string | null) {
   return mismatch === 0 ? email : null;
 }
 
-export async function getAdminEmail() { return verifyAdminSession((await cookies()).get(COOKIE)?.value); }
+export async function getAdminEmail() {
+  const customSession = await verifyAdminSession((await cookies()).get(COOKIE)?.value);
+  if (customSession) return customSession;
+  return (await getChatGPTUser())?.email || null;
+}
 export const adminCookieName = COOKIE;

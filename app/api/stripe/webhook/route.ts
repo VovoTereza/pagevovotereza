@@ -4,8 +4,8 @@ import Stripe from 'stripe';
 import { eq } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { orderItems, orders, processedWebhooks } from '@/db/schema';
-import { cartOffer, getBundle, getProduct, orderBump } from '@/lib/catalog';
 import { getStripe } from '@/lib/server/stripe';
+import { getCatalogConfig } from '@/lib/server/catalog-config';
 
 type CartInput = {
   kind: 'bundle' | 'product';
@@ -16,6 +16,9 @@ type CartInput = {
 
 async function completeCheckout(session: Stripe.Checkout.Session) {
   const db = getDb();
+  const { products, bundles, orderBump, cartOffer } = await getCatalogConfig();
+  const getBundle = (id: string) => bundles.find((item) => item.id === id);
+  const getProduct = (id: string) => products.find((item) => item.id === id);
   const orderId =
     session.metadata?.orderId ||
     session.client_reference_id ||

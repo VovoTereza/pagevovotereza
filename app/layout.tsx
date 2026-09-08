@@ -9,10 +9,10 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://vovotereza.com.br'),
-  title: 'Vovó Tereza | Receitas tradicionais em cadernos digitais',
-  description: 'Receitas brasileiras, cadernos de família e conhecimentos tradicionais organizados para consultar no celular.',
-  openGraph: { title: 'Vovó Tereza', description: 'O Caderno Esquecido da Vovó Tereza.', type: 'website', locale: 'pt_BR' },
-  twitter: { card: 'summary_large_image', title: 'Vovó Tereza', description: 'Receitas tradicionais organizadas com cuidado.' },
+  title: 'Vovó Tereza | Receitas naturais e autocuidado',
+  description: 'Receitas tradicionais de autocuidado, babosa para os cabelos e chás organizados em cadernos digitais.',
+  openGraph: { title: 'Vovó Tereza', description: 'Cadernos de receitas naturais e autocuidado, organizados com carinho.', type: 'website', locale: 'pt_BR' },
+  twitter: { card: 'summary_large_image', title: 'Vovó Tereza', description: 'Receitas naturais e autocuidado em cadernos digitais.' },
 };
 
 export default function RootLayout({

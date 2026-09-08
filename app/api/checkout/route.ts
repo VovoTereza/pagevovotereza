@@ -1,13 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  cartOffer,
-  exitOffers,
-  getBundle,
-  getProduct,
-  orderBump,
-} from '@/lib/catalog';
+import { getCatalogConfig } from '@/lib/server/catalog-config';
 import { getStripe } from '@/lib/server/stripe';
 import { getDb } from '@/db';
 import { orders } from '@/db/schema';
@@ -35,6 +29,9 @@ export async function POST(request: NextRequest) {
         { error: 'O carrinho enviado não é válido.' },
         { status: 400 },
       );
+    const { products, bundles, orderBump, cartOffer, exitOffers } = await getCatalogConfig();
+    const getBundle = (id: string) => bundles.find((item) => item.id === id);
+    const getProduct = (id: string) => products.find((item) => item.id === id);
     const covered = new Set<string>();
     const resolved = parsed.data.items
       .map((item) => {

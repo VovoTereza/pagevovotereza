@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { digitalAssets, orderItems, orders } from '@/db/schema';
+import { getCatalogConfig } from '@/lib/server/catalog-config';
 
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get('token'); const productId = request.nextUrl.searchParams.get('product');
@@ -12,7 +13,11 @@ export async function GET(request: NextRequest) {
   const [owned] = await db.select().from(orderItems).where(and(eq(orderItems.orderId, order.id), eq(orderItems.productId, productId))).limit(1);
   if (!owned) return NextResponse.json({ error: 'Produto não pertence a este pedido.' }, { status: 403 });
   const [asset] = await db.select().from(digitalAssets).where(and(eq(digitalAssets.productId, productId), eq(digitalAssets.active, true))).limit(1);
-  if (!asset) return NextResponse.json({ error: 'Arquivo temporariamente indisponível. Entre em contato com o suporte.' }, { status: 404 });
-  const object = await env.FILES.get(asset.fileKey); if (!object) return NextResponse.json({ error: 'Arquivo não encontrado.' }, { status: 404 });
-  return new Response(object.body, { headers: { 'content-type': asset.contentType, 'content-disposition': `attachment; filename="${asset.fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}"`, 'cache-control': 'private, no-store' } });
+  const configuredProduct = (await getCatalogConfig()).products.find((product) => product.id === productId);
+  const fileKey = asset?.fileKey || configuredProduct?.digitalFile;
+  const fileName = asset?.fileName || configuredProduct?.digitalFileName || 'caderno-vovo-tereza.pdf';
+  const contentType = asset?.contentType || 'application/pdf';
+  if (!fileKey) return NextResponse.json({ error: 'Arquivo temporariamente indisponível. Entre em contato com o suporte.' }, { status: 404 });
+  const object = await env.FILES.get(fileKey); if (!object) return NextResponse.json({ error: 'Arquivo não encontrado.' }, { status: 404 });
+  return new Response(object.body, { headers: { 'content-type': contentType, 'content-disposition': `attachment; filename="${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}"`, 'cache-control': 'private, no-store' } });
 }
