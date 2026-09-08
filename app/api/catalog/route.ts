@@ -37,6 +37,7 @@ const simpleOfferSchema = z.object({
 });
 const exitOfferSchema = z.object({
   stage: z.number().int().min(1).max(10),
+  banner: z.string().max(500).optional(),
   headline: z.string().min(3).max(160),
   description: z.string().min(8).max(500),
   bundleId: z.string().min(2).max(80),

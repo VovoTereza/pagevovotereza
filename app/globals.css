@@ -1151,7 +1151,8 @@ footer small {
   width: min(560px, calc(100% - 32px));
   height: max-content;
   margin: auto;
-  padding: 48px;
+  padding: 0;
+  overflow: hidden;
   border-radius: 12px;
   background: var(--paper);
   text-align: center;
@@ -1161,24 +1162,25 @@ footer small {
   position: absolute;
   right: 15px;
   top: 15px;
+  z-index: 2;
 }
-.exit-modal > svg {
-  width: 38px;
-  height: 38px;
-  color: var(--terracotta);
+.exit-banner {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 8 / 3;
+  background: var(--paper);
 }
-.exit-modal > small {
-  display: block;
-  margin-top: 12px;
-  color: var(--terracotta-dark);
-  font-weight: 850;
-  letter-spacing: 0.12em;
+.exit-banner img {
+  object-fit: contain;
+}
+.exit-modal-content {
+  padding: 40px 48px 36px;
 }
 .exit-modal h2 {
-  margin-top: 12px;
+  margin: 0;
   font-size: 40px;
 }
-.exit-modal > p {
+.exit-modal-content > p {
   color: var(--muted);
 }
 .exit-modal .primary-button {
@@ -1339,8 +1341,8 @@ footer small {
   .testimonials blockquote p {
     font-size: 21px;
   }
-  .exit-modal {
-    padding: 42px 24px 26px;
+  .exit-modal-content {
+    padding: 34px 24px 24px;
   }
   .exit-modal h2 {
     font-size: 32px;

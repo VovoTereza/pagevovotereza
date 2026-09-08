@@ -1313,6 +1313,7 @@ export function AdminDashboard({
                       ...catalog.exitOffers,
                       {
                         stage: catalog.exitOffers.length + 1,
+                        banner: '',
                         headline: 'Nova condição especial',
                         description:
                           'Descreva a condição oferecida nesta etapa.',
@@ -1338,6 +1339,35 @@ export function AdminDashboard({
                       ...catalog,
                       exitOffers: catalog.exitOffers.map((item, i) =>
                         i === index ? next : item,
+                      ),
+                    })
+                  }
+                  onBannerChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    void (async () => {
+                      const result = await upload(
+                        file,
+                        'cover',
+                        `recuperacao-etapa-${offer.stage}`,
+                      );
+                      if (!result?.url) return;
+                      setCatalog((current) => ({
+                        ...current,
+                        exitOffers: current.exitOffers.map((item, i) =>
+                          i === index ? { ...item, banner: result.url! } : item,
+                        ),
+                      }));
+                      setMessage(
+                        'Banner enviado. Salve as etapas para publicar.',
+                      );
+                    })();
+                  }}
+                  onBannerRemove={() =>
+                    setCatalog({
+                      ...catalog,
+                      exitOffers: catalog.exitOffers.map((item, i) =>
+                        i === index ? { ...item, banner: '' } : item,
                       ),
                     })
                   }
@@ -2548,14 +2578,25 @@ function ExitOfferFields({
   offer,
   bundles,
   onChange,
+  onBannerChange,
+  onBannerRemove,
 }: {
   offer: ExitOffer;
   bundles: Bundle[];
   onChange: (offer: ExitOffer) => void;
+  onBannerChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onBannerRemove: () => void;
 }) {
   return (
     <article>
       <strong>Etapa {offer.stage}</strong>
+      <AdminImageField
+        label={`Banner da ${offer.stage}ª fuga`}
+        value={offer.banner || ''}
+        aspect="wide"
+        onChange={onBannerChange}
+        onRemove={onBannerRemove}
+      />
       <div className="form-grid">
         <label>
           Título

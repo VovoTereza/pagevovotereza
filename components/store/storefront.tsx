@@ -16,7 +16,6 @@ import {
   Plus,
   ShieldCheck,
   ShoppingBag,
-  Sparkles,
   Star,
   X,
 } from 'lucide-react';
@@ -1434,29 +1433,40 @@ export function Storefront() {
               >
                 <X />
               </button>
-              <Sparkles />
-              <small>OPÇÃO {exitStage} DE 3</small>
-              <h2 id="exit-title">{exitOffers[exitStage - 1].headline}</h2>
-              <p>{exitOffers[exitStage - 1].description}</p>
-              <button
-                className="primary-button"
-                onClick={() => {
-                  const offer = exitOffers[exitStage - 1];
-                  track(`exit_offer_${exitStage}_accept`);
-                  addBundle(offer.bundleId, offer.discountPercent);
-                }}
-              >
-                {exitOffers[exitStage - 1].cta}
-              </button>
-              <button
-                className="text-button"
-                onClick={() => {
-                  setExitOpen(false);
-                  sessionStorage.setItem('vovo-exit-stage', String(exitStage));
-                }}
-              >
-                Não, quero continuar navegando
-              </button>
+              {exitOffers[exitStage - 1].banner && (
+                <div className="exit-banner">
+                  <Image
+                    src={exitOffers[exitStage - 1].banner!}
+                    alt=""
+                    fill
+                    sizes="(max-width: 600px) calc(100vw - 24px), 560px"
+                    unoptimized={exitOffers[exitStage - 1].banner!.startsWith('/api/media')}
+                  />
+                </div>
+              )}
+              <div className="exit-modal-content">
+                <h2 id="exit-title">{exitOffers[exitStage - 1].headline}</h2>
+                <p>{exitOffers[exitStage - 1].description}</p>
+                <button
+                  className="primary-button"
+                  onClick={() => {
+                    const offer = exitOffers[exitStage - 1];
+                    track(`exit_offer_${exitStage}_accept`);
+                    addBundle(offer.bundleId, offer.discountPercent);
+                  }}
+                >
+                  {exitOffers[exitStage - 1].cta}
+                </button>
+                <button
+                  className="text-button"
+                  onClick={() => {
+                    setExitOpen(false);
+                    sessionStorage.setItem('vovo-exit-stage', String(exitStage));
+                  }}
+                >
+                  Não, quero continuar navegando
+                </button>
+              </div>
             </motion.dialog>
           </>
         )}

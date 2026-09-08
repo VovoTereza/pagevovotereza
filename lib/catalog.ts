@@ -31,6 +31,7 @@ export type SimpleOffer = {
 };
 export type ExitOffer = {
   stage: number;
+  banner?: string;
   headline: string;
   description: string;
   bundleId: string;
@@ -148,6 +149,7 @@ export const cartOffer = {
 export const exitOffers = [
   {
     stage: 1,
+    banner: '',
     headline: 'Quer começar pelo essencial?',
     description:
       'Leve o livro com 150 receitas naturais com 10% de desconto nesta sessão.',
@@ -157,6 +159,7 @@ export const exitOffers = [
   },
   {
     stage: 2,
+    banner: '',
     headline: 'Quer conhecer os três temas principais?',
     description:
       'A Coleção Cuidado de Casa reúne o livro principal, o caderno da babosa e o guia de chás.',
@@ -166,6 +169,7 @@ export const exitOffers = [
   },
   {
     stage: 3,
+    banner: '',
     headline: 'Uma última opção para esta sessão',
     description: 'Comece pelo livro principal em uma condição mais econômica.',
     bundleId: 'essencial',
