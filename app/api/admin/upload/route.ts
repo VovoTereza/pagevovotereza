@@ -1,6 +1,6 @@
-import { env } from 'cloudflare:workers';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminEmail } from '@/lib/server/admin-auth';
+import { uploadObject } from '@/lib/server/supabase';
 
 const safePart = (value: string) =>
   value
@@ -44,10 +44,7 @@ export async function POST(request: NextRequest) {
     );
   const key = `${isCover ? 'covers' : 'deliverables'}/${safePart(productId)}/${crypto.randomUUID()}-${safePart(file.name)}`;
   try {
-    await env.FILES.put(key, file.stream(), {
-      httpMetadata: { contentType: file.type },
-      customMetadata: { originalName: file.name },
-    });
+    await uploadObject(key, await file.arrayBuffer(), file.type);
     return NextResponse.json({
       ok: true,
       key,

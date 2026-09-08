@@ -1,10 +1,8 @@
-import { eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getDb } from '@/db';
-import { siteSettings } from '@/db/schema';
 import { defaultSiteConfig } from '@/lib/catalog';
 import { getAdminEmail } from '@/lib/server/admin-auth';
+import { selectRows, upsertRows } from '@/lib/server/supabase';
 
 const schema = z.object({
   heroBadge: z.string().min(2).max(100),
@@ -47,11 +45,11 @@ const schema = z.object({
 
 export async function GET() {
   try {
-    const [row] = await getDb()
-      .select()
-      .from(siteSettings)
-      .where(eq(siteSettings.key, 'public_config'))
-      .limit(1);
+    const [row] = await selectRows<{ value: object }>('site_settings', {
+      key: 'eq.public_config',
+      select: 'value',
+      limit: 1,
+    });
     return NextResponse.json({
       ...defaultSiteConfig,
       keyword: 'babosa',
@@ -81,13 +79,11 @@ export async function PUT(request: NextRequest) {
       { status: 400 },
     );
   try {
-    await getDb()
-      .insert(siteSettings)
-      .values({ key: 'public_config', value: parsed.data })
-      .onConflictDoUpdate({
-        target: siteSettings.key,
-        set: { value: parsed.data, updatedAt: new Date() },
-      });
+    await upsertRows(
+      'site_settings',
+      { key: 'public_config', value: parsed.data, updated_at: new Date().toISOString() },
+      'key',
+    );
     return NextResponse.json({ ok: true, config: parsed.data });
   } catch {
     return NextResponse.json(

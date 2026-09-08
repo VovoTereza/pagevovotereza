@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
-import { getDb } from '@/db';
-import {
-  bundleItems,
-  bundles as bundleRows,
-  cartOffers,
-  exitOffers as exitOfferRows,
-  orderBumps,
-  products as productRows,
-  siteSettings,
-  testimonials as testimonialRows,
-} from '@/db/schema';
 import { getAdminEmail } from '@/lib/server/admin-auth';
 import { getCatalogConfig } from '@/lib/server/catalog-config';
+import { upsertRows } from '@/lib/server/supabase';
 
 const productSchema = z.object({
   id: z.string().min(2).max(80),
@@ -107,6 +96,17 @@ export async function PUT(request: NextRequest) {
       { status: 400 },
     );
   try {
+    await upsertRows(
+      'site_settings',
+      {
+        key: 'catalog_config',
+        value: parsed.data,
+        updated_at: new Date().toISOString(),
+      },
+      'key',
+    );
+    return NextResponse.json({ ok: true, catalog: parsed.data });
+    /* O modelo relacional detalhado continua documentado na migração SQL.
     const db = getDb();
     for (const product of parsed.data.products) {
       await db
@@ -303,7 +303,7 @@ export async function PUT(request: NextRequest) {
         target: siteSettings.key,
         set: { value: parsed.data, updatedAt: new Date() },
       });
-    return NextResponse.json({ ok: true, catalog: parsed.data });
+    return NextResponse.json({ ok: true, catalog: parsed.data }); */
   } catch {
     return NextResponse.json(
       { error: 'Não foi possível salvar o catálogo.' },

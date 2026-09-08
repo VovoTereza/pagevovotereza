@@ -1,11 +1,11 @@
-import { env } from 'cloudflare:workers';
 import { NextRequest, NextResponse } from 'next/server';
+import { getObject } from '@/lib/server/supabase';
 
 export async function GET(request: NextRequest) {
   const key = request.nextUrl.searchParams.get('key');
   if (!key || !key.startsWith('covers/'))
     return NextResponse.json({ error: 'Imagem inválida.' }, { status: 400 });
-  const object = await env.FILES.get(key);
+  const object = await getObject(key);
   if (!object)
     return NextResponse.json(
       { error: 'Imagem não encontrada.' },
@@ -13,8 +13,7 @@ export async function GET(request: NextRequest) {
     );
   return new Response(object.body, {
     headers: {
-      'content-type':
-        object.httpMetadata?.contentType || 'application/octet-stream',
+      'content-type': object.headers.get('content-type') || 'application/octet-stream',
       'cache-control': 'public, max-age=3600',
     },
   });

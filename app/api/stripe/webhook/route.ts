@@ -1,11 +1,9 @@
 import { env } from 'cloudflare:workers';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { eq } from 'drizzle-orm';
-import { getDb } from '@/db';
-import { orderItems, orders, processedWebhooks } from '@/db/schema';
 import { getStripe } from '@/lib/server/stripe';
 import { getCatalogConfig } from '@/lib/server/catalog-config';
+import { insertRows, updateRows, upsertRows } from '@/lib/server/supabase';
 
 type CartInput = {
   kind: 'bundle' | 'product';
@@ -15,7 +13,6 @@ type CartInput = {
 };
 
 async function completeCheckout(session: Stripe.Checkout.Session) {
-  const db = getDb();
   const { products, bundles, orderBump, cartOffer } = await getCatalogConfig();
   const getBundle = (id: string) => bundles.find((item) => item.id === id);
   const getProduct = (id: string) => products.find((item) => item.id === id);
@@ -32,42 +29,28 @@ async function completeCheckout(session: Stripe.Checkout.Session) {
     session.customer_details?.email || session.customer_email || null;
   const name = session.customer_details?.name || null;
   const token = crypto.randomUUID();
-  await db
-    .insert(orders)
-    .values({
+  await upsertRows('orders', {
       id: orderId,
-      orderNumber,
-      customerName: name,
-      customerEmail: email,
+      order_number: orderNumber,
+      customer_name: name,
+      customer_email: email,
       subtotal: session.amount_subtotal || total,
       discount: (session.amount_subtotal || total) - total,
       total,
       currency: (session.currency || 'brl').toUpperCase(),
-      stripePaymentIntentId:
+      stripe_payment_intent_id:
         typeof session.payment_intent === 'string'
           ? session.payment_intent
           : null,
-      stripeCheckoutSessionId: session.id,
-      stripeCustomerId:
+      stripe_checkout_session_id: session.id,
+      stripe_customer_id:
         typeof session.customer === 'string' ? session.customer : null,
       status: 'confirmed',
-      paymentStatus: 'paid',
-      downloadToken: token,
-    })
-    .onConflictDoUpdate({
-      target: orders.id,
-      set: {
-        customerName: name,
-        customerEmail: email,
-        total,
-        stripeCheckoutSessionId: session.id,
-        status: 'confirmed',
-        paymentStatus: 'paid',
-        downloadToken: token,
-        updatedAt: new Date(),
-      },
-    });
-  const rows: (typeof orderItems.$inferInsert)[] = [];
+      payment_status: 'paid',
+      download_token: token,
+      updated_at: new Date().toISOString(),
+    }, 'id');
+  const rows: Record<string, unknown>[] = [];
   for (const item of cart) {
     if (item.kind === 'bundle') {
       const bundle = getBundle(item.id);
@@ -75,14 +58,14 @@ async function completeCheckout(session: Stripe.Checkout.Session) {
       for (const productId of bundle.productIds)
         rows.push({
           id: crypto.randomUUID(),
-          orderId,
-          productId,
-          bundleId: bundle.id,
-          titleSnapshot: getProduct(productId)?.name || bundle.name,
+          order_id: orderId,
+          product_id: productId,
+          bundle_id: bundle.id,
+          title_snapshot: getProduct(productId)?.name || bundle.name,
           quantity: item.quantity,
-          unitPrice: 0,
+          unit_price: 0,
           total: 0,
-          itemType: 'bundle_product',
+          item_type: 'bundle_product',
         });
     } else {
       const product = getProduct(item.id);
@@ -94,18 +77,18 @@ async function completeCheckout(session: Stripe.Checkout.Session) {
           price = cartOffer.price;
         rows.push({
           id: crypto.randomUUID(),
-          orderId,
-          productId: product.id,
-          titleSnapshot: product.name,
+          order_id: orderId,
+          product_id: product.id,
+          title_snapshot: product.name,
           quantity: item.quantity,
-          unitPrice: price,
+          unit_price: price,
           total: price * item.quantity,
-          itemType: item.source || 'product',
+          item_type: item.source || 'product',
         });
       }
     }
   }
-  if (rows.length) await db.insert(orderItems).values(rows);
+  if (rows.length) await insertRows('order_items', rows);
 }
 
 export async function POST(request: NextRequest) {
@@ -130,11 +113,8 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
-  const db = getDb();
   try {
-    await db
-      .insert(processedWebhooks)
-      .values({ id: event.id, type: event.type });
+    await insertRows('processed_webhooks', { id: event.id, type: event.type });
   } catch {
     return NextResponse.json({ received: true, duplicate: true });
   }
@@ -147,28 +127,22 @@ export async function POST(request: NextRequest) {
     event.type === 'checkout.session.async_payment_failed' ||
     event.type === 'checkout.session.expired'
   )
-    await db
-      .update(orders)
-      .set({
+    await updateRows('orders', { stripe_checkout_session_id: `eq.${event.data.object.id}` }, {
         status: event.type.endsWith('expired') ? 'expired' : 'payment_failed',
-        paymentStatus: 'failed',
-        updatedAt: new Date(),
-      })
-      .where(eq(orders.stripeCheckoutSessionId, event.data.object.id));
+        payment_status: 'failed',
+        updated_at: new Date().toISOString(),
+      });
   if (event.type === 'charge.refunded') {
     const intent =
       typeof event.data.object.payment_intent === 'string'
         ? event.data.object.payment_intent
         : '';
     if (intent)
-      await db
-        .update(orders)
-        .set({
+      await updateRows('orders', { stripe_payment_intent_id: `eq.${intent}` }, {
           status: 'refunded',
-          paymentStatus: 'refunded',
-          updatedAt: new Date(),
-        })
-        .where(eq(orders.stripePaymentIntentId, intent));
+          payment_status: 'refunded',
+          updated_at: new Date().toISOString(),
+        });
   }
   return NextResponse.json({ received: true });
 }

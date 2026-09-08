@@ -7,6 +7,9 @@ declare namespace Cloudflare {
     ADMIN_EMAIL?: string;
     ADMIN_PASSWORD?: string;
     ADMIN_SESSION_SECRET?: string;
+    SUPABASE_URL?: string;
+    SUPABASE_SERVICE_ROLE_KEY?: string;
+    SUPABASE_STORAGE_BUCKET?: string;
     NEXT_PUBLIC_SITE_URL?: string;
   }
 }

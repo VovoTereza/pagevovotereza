@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCatalogConfig } from '@/lib/server/catalog-config';
 import { getStripe } from '@/lib/server/stripe';
-import { getDb } from '@/db';
-import { orders } from '@/db/schema';
+import { insertRows } from '@/lib/server/supabase';
 
 const requestSchema = z.object({
   items: z
@@ -80,16 +79,14 @@ export async function POST(request: NextRequest) {
     const orderId = crypto.randomUUID();
     const orderNumber = `VT-${Date.now().toString(36).toUpperCase()}`;
     try {
-      await getDb()
-        .insert(orders)
-        .values({
+      await insertRows('orders', {
           id: orderId,
-          orderNumber,
+          order_number: orderNumber,
           subtotal: total,
           total,
           currency: 'BRL',
           status: 'pending',
-          paymentStatus: 'pending',
+          payment_status: 'pending',
         });
     } catch (error) {
       console.error('pending_order_write_failed', error);

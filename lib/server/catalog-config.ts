@@ -1,15 +1,12 @@
-import { eq } from 'drizzle-orm';
-import { getDb } from '@/db';
-import { siteSettings } from '@/db/schema';
 import { defaultCatalog, type CatalogConfig } from '@/lib/catalog';
+import { selectRows } from '@/lib/server/supabase';
 
 export async function getCatalogConfig(): Promise<CatalogConfig> {
   try {
-    const [row] = await getDb()
-      .select()
-      .from(siteSettings)
-      .where(eq(siteSettings.key, 'catalog_config'))
-      .limit(1);
+    const [row] = await selectRows<{ value: Partial<CatalogConfig> }>(
+      'site_settings',
+      { key: 'eq.catalog_config', select: 'value', limit: 1 },
+    );
     const value = row?.value as Partial<CatalogConfig> | undefined;
     if (!value) return structuredClone(defaultCatalog);
     return {
