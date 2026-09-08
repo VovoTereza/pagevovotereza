@@ -1,4 +1,3 @@
-import { env } from 'cloudflare:workers';
 import { redirect } from 'next/navigation';
 import { AdminDashboard } from '@/components/admin/dashboard';
 import { getAdminEmail } from '@/lib/server/admin-auth';
@@ -44,7 +43,6 @@ export default async function AdminPage() {
     revenue = recentOrders.reduce((sum, order) => sum + (order.payment_status === 'paid' ? order.total : 0), 0);
   } catch {}
   const catalog = await getCatalogConfig();
-  void env;
   return (
     <AdminDashboard
       initialConfig={config}

@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:workers';
+import { env } from '@/lib/server/runtime-env';
 import { CheckCircle2, Download, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { getStripe } from '@/lib/server/stripe';

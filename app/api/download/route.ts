@@ -1,4 +1,3 @@
-import { env } from 'cloudflare:workers';
 import { NextRequest, NextResponse } from 'next/server';
 import { getCatalogConfig } from '@/lib/server/catalog-config';
 import { getObject, selectRows } from '@/lib/server/supabase';
@@ -17,6 +16,5 @@ export async function GET(request: NextRequest) {
   const contentType = asset?.content_type || 'application/pdf';
   if (!fileKey) return NextResponse.json({ error: 'Arquivo temporariamente indisponível. Entre em contato com o suporte.' }, { status: 404 });
   const object = await getObject(fileKey); if (!object) return NextResponse.json({ error: 'Arquivo não encontrado.' }, { status: 404 });
-  void env;
   return new Response(object.body, { headers: { 'content-type': contentType, 'content-disposition': `attachment; filename="${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}"`, 'cache-control': 'private, no-store' } });
 }

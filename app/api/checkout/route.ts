@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:workers';
+import { env } from '@/lib/server/runtime-env';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCatalogConfig } from '@/lib/server/catalog-config';
