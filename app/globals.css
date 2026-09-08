@@ -959,6 +959,7 @@ footer small {
     font-size: 14px;
   }
 }
+
 .drawer-backdrop,
 .modal-backdrop {
   position: fixed;
@@ -1528,6 +1529,22 @@ footer small {
   padding: 0 10px;
   color: #fff;
 }
+.admin-sidebar-head {
+  display: block;
+}
+.admin-sidebar-title {
+  display: block;
+  margin: 8px 10px 28px;
+}
+.admin-sidebar-title small {
+  color: #9f9283;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+.admin-sidebar-title strong,
+.admin-menu-toggle {
+  display: none;
+}
 .admin-sidebar > small {
   margin: 8px 10px 28px;
   color: #9f9283;
@@ -1785,14 +1802,87 @@ footer small {
     grid-template-columns: 1fr;
   }
   .admin-sidebar {
-    position: static;
+    position: sticky;
+    z-index: 60;
+    top: 0;
     height: auto;
+    padding: 14px 16px;
+    box-shadow: 0 8px 24px rgba(28, 25, 20, 0.14);
+  }
+  .admin-sidebar-head {
+    min-height: 56px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+  }
+  .admin-sidebar .brand {
+    padding: 0;
+  }
+  .admin-sidebar .brand-logo {
+    width: 112px;
+  }
+  .admin-sidebar-title {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+    margin: 0;
+  }
+  .admin-sidebar-title small {
+    font-size: 9px;
+  }
+  .admin-sidebar-title strong {
+    display: block;
+    overflow: hidden;
+    color: #fff;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .admin-menu-toggle {
+    min-width: 48px;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    background: #433930;
+    color: #fff;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  .admin-menu-toggle svg {
+    width: 18px;
   }
   .admin-sidebar nav {
-    grid-template-columns: 1fr 1fr;
+    display: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: visible;
+  }
+  .admin-sidebar.nav-open nav {
+    display: grid;
+  }
+  .admin-sidebar nav button {
+    min-height: 48px;
+    padding: 9px 10px;
+    font-size: 13px;
+    white-space: normal;
   }
   .admin-sidebar .logout {
-    margin-top: 18px;
+    display: none;
+    min-height: 48px;
+    margin-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .admin-sidebar.nav-open .logout {
+    display: grid;
   }
   .metric-grid,
   .offer-admin-grid,
@@ -1808,20 +1898,48 @@ footer small {
   }
 }
 @media (max-width: 520px) {
-  .admin-sidebar nav {
-    grid-template-columns: 1fr;
-  }
   .admin-main {
-    padding: 20px 14px;
+    padding: 24px 16px 40px;
   }
   .metric-grid {
     grid-template-columns: 1fr;
   }
   .admin-main > header {
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .admin-main > header h1 {
+    font-size: clamp(32px, 10vw, 42px);
+  }
+  .admin-main > header .eyebrow {
+    margin-bottom: 6px;
+    font-size: 10px;
   }
   .admin-main > header a {
+    width: auto;
+    justify-content: center;
+    padding-inline: 13px;
     font-size: 13px;
+  }
+  .metric-grid {
+    gap: 12px;
+  }
+  .metric-grid article {
+    min-height: 150px;
+    padding: 20px;
+  }
+  .metric-grid span {
+    margin-top: 14px;
+  }
+  .admin-section {
+    padding: 20px 16px;
+    border-radius: 9px;
+  }
+  .admin-section h2 {
+    font-size: 25px;
   }
   .section-actions {
     align-items: flex-start;
@@ -2188,35 +2306,6 @@ footer .brand-logo {
     width: calc(100% - 24px);
     max-height: calc(100dvh - 24px);
     overflow: auto;
-  }
-  .admin-sidebar {
-    padding: 22px 14px 14px;
-  }
-  .admin-sidebar > small {
-    margin-bottom: 16px;
-  }
-  .admin-sidebar nav {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(158px, 70vw);
-    grid-template-columns: none;
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    scrollbar-width: thin;
-  }
-  .admin-sidebar .logout {
-    width: 100%;
-    margin-top: 14px;
-  }
-  .admin-main > header {
-    flex-wrap: wrap;
-  }
-  .admin-main > header h1 {
-    font-size: clamp(34px, 12vw, 44px);
-  }
-  .admin-main > header a {
-    width: 100%;
-    justify-content: center;
   }
 }
 
@@ -5741,5 +5830,24 @@ footer .brand-logo {
     width: 100%;
     align-items: flex-start;
     padding: 20px;
+  }
+}
+
+/* Compact, disclosure-based administration navigation on phones and tablets. */
+@media (max-width: 800px) {
+  .admin-sidebar nav {
+    display: none;
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+  .admin-sidebar.nav-open nav {
+    display: grid;
+  }
+  .admin-sidebar nav button {
+    min-height: 48px;
+    font-size: 13px;
+    white-space: normal;
   }
 }

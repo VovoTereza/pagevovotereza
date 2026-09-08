@@ -23,6 +23,7 @@ import {
   Images,
   KeyRound,
   LogOut,
+  Menu,
   Megaphone,
   MessageSquareQuote,
   Monitor,
@@ -236,6 +237,7 @@ export function AdminDashboard({
   );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [editorSection, setEditorSection] = useState<EditorSection>('hero');
   const [selectedEditorField, setSelectedEditorField] =
     useState<EditorField | null>(null);
@@ -634,12 +636,27 @@ export function AdminDashboard({
       className={`admin-shell${active === 'Editor da página' ? ' editor-open' : ''}`}
     >
       {active !== 'Editor da página' && (
-        <aside className="admin-sidebar">
-          <div className="brand">
-            <BrandLogo />
+        <aside className={`admin-sidebar${mobileNavOpen ? ' nav-open' : ''}`}>
+          <div className="admin-sidebar-head">
+            <div className="brand">
+              <BrandLogo />
+            </div>
+            <div className="admin-sidebar-title">
+              <small>ADMINISTRAÇÃO</small>
+              <strong>{active}</strong>
+            </div>
+            <button
+              type="button"
+              className="admin-menu-toggle"
+              aria-expanded={mobileNavOpen}
+              aria-controls="admin-navigation"
+              onClick={() => setMobileNavOpen((current) => !current)}
+            >
+              {mobileNavOpen ? <X /> : <Menu />}
+              <span>Menu</span>
+            </button>
           </div>
-          <small>ADMINISTRAÇÃO</small>
-          <nav>
+          <nav id="admin-navigation">
             {nav.map(([name, Icon]) => (
               <button
                 type="button"
@@ -648,6 +665,7 @@ export function AdminDashboard({
                 onClick={() => {
                   setActive(name);
                   setMessage('');
+                  setMobileNavOpen(false);
                 }}
               >
                 <Icon />
