@@ -60,91 +60,6 @@ type CartLine = {
   offerStage?: number;
 };
 
-const benefits = [
-  [
-    'Você encontra o que procura',
-    'Receitas separadas por tema, ingrediente e forma de uso.',
-  ],
-  [
-    'Prepara sem complicação',
-    'Passos claros e ingredientes conhecidos para acompanhar na sua rotina.',
-  ],
-  [
-    'Acesso em qualquer aparelho',
-    'Abra no celular, tablet ou computador depois da confirmação.',
-  ],
-  [
-    'Escolhas mais conscientes',
-    'Cuidados, observações e limites de uso aparecem junto dos preparos.',
-  ],
-];
-const faqs = [
-  [
-    'O produto é físico ou digital?',
-    'É uma coleção digital. O acesso aos arquivos fica disponível na página do pedido após a confirmação do pagamento.',
-  ],
-  [
-    'Consigo abrir no celular?',
-    'Sim. Os arquivos foram preparados para leitura no celular, tablet ou computador.',
-  ],
-  [
-    'Preciso ter experiência com receitas naturais?',
-    'Não. Os preparos têm linguagem direta, lista de ingredientes e modo de uso para facilitar a consulta.',
-  ],
-  [
-    'O pagamento é seguro?',
-    'Sim. O pagamento é processado pela Stripe e os dados do cartão não passam pelo nosso servidor.',
-  ],
-  [
-    'Quando recebo?',
-    'Após a confirmação do pagamento, os links para baixar os arquivos ficam disponíveis na página do pedido.',
-  ],
-  [
-    'Existe conteúdo sobre babosa para os cabelos?',
-    'Sim. A coleção inclui preparos de uso externo e orientações de cuidado, como fazer teste em uma pequena área antes do uso.',
-  ],
-  [
-    'Os cadernos substituem orientação médica ou nutricional?',
-    'Não. O conteúdo é educativo e reúne usos tradicionais. Gestantes, lactantes e pessoas com condições de saúde ou que usam medicamentos devem conversar com um profissional antes de consumir chás ou mudar a rotina.',
-  ],
-];
-
-const bumpRecipePreviews = [
-  {
-    title: 'Pré-lavagem com babosa',
-    summary:
-      'Gel de babosa diluído para aplicar no comprimento dos fios antes da lavagem, com orientação de teste em uma pequena área.',
-  },
-  {
-    title: 'Máscara de babosa e aveia',
-    summary:
-      'Um preparo de uso externo com textura cremosa, tempo de pausa curto e enxágue cuidadoso.',
-  },
-  {
-    title: 'Babosa com óleo vegetal',
-    summary:
-      'Uma mistura simples para o comprimento dos fios, acompanhada de cuidados de aplicação e retirada.',
-  },
-];
-
-const ingredientRecipePreviews = [
-  {
-    title: 'Infusão simples de camomila',
-    summary:
-      'Flores secas e água quente, com medidas, tempo de infusão e modo de conservação organizados no guia.',
-  },
-  {
-    title: 'Água aromatizada com gengibre e hortelã',
-    summary:
-      'Um preparo leve com ingredientes frescos e instruções claras de higienização e armazenamento.',
-  },
-  {
-    title: 'Infusão de alecrim com limão',
-    summary:
-      'Uma combinação tradicional apresentada com proporções simples e observações importantes de consumo.',
-  },
-];
-
 function track(name: string, data: Record<string, unknown> = {}) {
   window.dispatchEvent(
     new CustomEvent('vovo:analytics', {
@@ -193,8 +108,8 @@ export function Storefront() {
     () => false,
   );
   const [offerRecipeIndexes, setOfferRecipeIndexes] = useState({
-    bump: bumpRecipePreviews.length - 1,
-    ingredients: ingredientRecipePreviews.length - 1,
+    bump: 0,
+    ingredients: 0,
   });
   const [exitStage, setExitStage] = useState(0);
   const [exitOpen, setExitOpen] = useState(false);
@@ -250,6 +165,29 @@ export function Storefront() {
       window.removeEventListener('message', handleEditorMessage);
     };
   }, []);
+  useEffect(() => {
+    if (!isEditorPreview) return;
+    const cartMode = new URLSearchParams(window.location.search).get('editorCart');
+    if (!cartMode) return;
+    const bundle = bundles[0];
+    queueMicrotask(() => {
+      setDrawerOpen(true);
+      if (cartMode === 'empty') {
+        setCart([]);
+      } else if (bundle) {
+        setCart([
+          {
+            kind: 'bundle',
+            id: bundle.id,
+            quantity: 1,
+            price: bundle.price,
+            compareAtPrice: bundle.compareAtPrice,
+            title: bundle.name,
+          },
+        ]);
+      }
+    });
+  }, [bundles, isEditorPreview]);
 
   useEffect(() => {
     if (!sessionStorage.getItem('vovo-session'))
@@ -407,8 +345,8 @@ export function Storefront() {
 
   function openCart() {
     setOfferRecipeIndexes((current) => ({
-      bump: (current.bump + 1) % bumpRecipePreviews.length,
-      ingredients: (current.ingredients + 1) % ingredientRecipePreviews.length,
+      bump: (current.bump + 1) % config.cartBumpRecipes.length,
+      ingredients: (current.ingredients + 1) % config.cartOfferRecipes.length,
     }));
     setDrawerOpen(true);
     track('cart_open');
@@ -545,11 +483,11 @@ export function Storefront() {
         >
           <BrandLogo priority />
         </Link>
-        <nav className="desktop-nav" aria-label="Navegação principal">
-          <a href="#livro">Início</a>
-          <a href="#para-voce">Para você</a>
-          <a href="#historia">Nossa história</a>
-          <a href="#duvidas">Dúvidas</a>
+        <nav className="desktop-nav" aria-label="Navegação principal" data-editor-field="navLabels">
+          <a href="#livro">{config.navLabels[0]}</a>
+          <a href="#para-voce">{config.navLabels[1]}</a>
+          <a href="#historia">{config.navLabels[2]}</a>
+          <a href="#duvidas">{config.navLabels[3]}</a>
         </nav>
         <div className="header-actions">
           <button
@@ -571,13 +509,13 @@ export function Storefront() {
         {menuOpen && (
           <nav className="mobile-nav">
             <a href="#livro" onClick={() => setMenuOpen(false)}>
-              Início
+              {config.navLabels[0]}
             </a>
             <a href="#ofertas" onClick={() => setMenuOpen(false)}>
-              Ofertas
+              {config.navLabels[1]}
             </a>
             <a href="#duvidas" onClick={() => setMenuOpen(false)}>
-              Dúvidas
+              {config.navLabels[3]}
             </a>
           </nav>
         )}
@@ -603,24 +541,24 @@ export function Storefront() {
             <p className="hero-subtitle" data-editor-field="heroSubtitle">
               {config.heroSubtitle}
             </p>
-            <ul className="hero-benefits" aria-label="Destaques dos cadernos">
+            <ul className="hero-benefits" aria-label="Destaques dos cadernos" data-editor-field="heroBenefits">
               <li>
-                <Leaf aria-hidden="true" /> Receitas com babosa
+                <Leaf aria-hidden="true" /> {config.heroBenefits[0]}
               </li>
               <li>
-                <Heart aria-hidden="true" /> Chás e infusões
+                <Heart aria-hidden="true" /> {config.heroBenefits[1]}
               </li>
               <li>
-                <NotebookPen aria-hidden="true" /> Passo a passo simples
+                <NotebookPen aria-hidden="true" /> {config.heroBenefits[2]}
               </li>
               <li>
-                <Check aria-hidden="true" /> Ingredientes acessíveis
+                <Check aria-hidden="true" /> {config.heroBenefits[3]}
               </li>
             </ul>
-            <div className="hero-price">
-              <small>A partir de</small>
+            <div className="hero-price" data-editor-field="heroPrice">
+              <small>{config.heroPriceLabel}</small>
               <strong>{formatMoney(bundles[0].price)}</strong>
-              <span>acesso digital</span>
+              <span>{config.heroPriceSuffix}</span>
             </div>
             <a
               href="#ofertas"
@@ -631,9 +569,8 @@ export function Storefront() {
             >
               {config.ctaText}
             </a>
-            <p className="microcopy">
-              <LockKeyhole /> Pagamento seguro. Acesso liberado após a
-              confirmação.
+            <p className="microcopy" data-editor-field="heroMicrocopy">
+              <LockKeyhole /> {config.heroMicrocopy}
             </p>
           </motion.div>
           <motion.div
@@ -651,17 +588,14 @@ export function Storefront() {
                 unoptimized={config.heroImage.startsWith('/api/media')}
               />
             )}
-            <div className="book-card">
+            <div className="book-card" data-editor-field="heroCard">
               <BookOpen />
-              <span>150 receitas naturais</span>
-              <small>em cadernos fáceis de consultar</small>
+              <span>{config.heroCardTitle}</span>
+              <small>{config.heroCardSubtitle}</small>
             </div>
           </motion.div>
         </section>
-        <section
-          className="proof-strip"
-          aria-label="Características da coleção"
-        >
+        <section className="proof-strip" aria-label="Características da coleção" data-editor-field="proofItems">
           <div className="proof-track">
             {[false, true].map((duplicate) => (
               <div
@@ -671,45 +605,28 @@ export function Storefront() {
               >
                 <span>
                   <IconsaxArchiveBook aria-hidden="true" />
-                  Conteúdo organizado
+                  {config.proofItems[0]}
                 </span>
                 <span>
                   <IconsaxMobile aria-hidden="true" />
-                  Formato digital
+                  {config.proofItems[1]}
                 </span>
                 <span>
                   <IconsaxCardTick aria-hidden="true" />
-                  Pagamento pela Stripe
+                  {config.proofItems[2]}
                 </span>
               </div>
             ))}
           </div>
         </section>
         <section className="pain-section" id="para-voce">
-          <motion.div className="section-heading" {...fade}>
-            <p className="eyebrow">SE ISSO ACONTECE COM VOCÊ</p>
-            <h2>Cuidar de si ficou mais confuso do que deveria</h2>
-            <p>
-              Depois dos 45, o corpo e os cabelos mudam. Ao mesmo tempo, a
-              internet oferece receitas demais, explicações de menos e promessas
-              difíceis de acreditar.
-            </p>
+          <motion.div className="section-heading" {...fade} data-editor-field="painHeading">
+            <p className="eyebrow">{config.painEyebrow}</p>
+            <h2>{config.painTitle}</h2>
+            <p>{config.painDescription}</p>
           </motion.div>
-          <div className="pain-grid">
-            {[
-              [
-                'Cabelos pedindo cuidado',
-                'Ressecamento e fios mais frágeis fazem você testar dicas soltas sem saber como preparar ou usar cada ingrediente.',
-              ],
-              [
-                'Uma rotina difícil de sustentar',
-                'Você quer se sentir mais leve e cuidar da alimentação, mas não precisa de mais uma promessa milagrosa.',
-              ],
-              [
-                'Saberes espalhados',
-                'Receitas antigas ficam em papéis, mensagens e vídeos salvos, justamente quando você precisa consultá-las.',
-              ],
-            ].map(([title, text], index) => (
+          <div className="pain-grid" data-editor-field="painItems">
+            {config.painItems.map(({ title, text }, index) => (
               <motion.article className="pain-card" key={title} {...fade}>
                 <span>0{index + 1}</span>
                 <h3>{title}</h3>
@@ -719,34 +636,17 @@ export function Storefront() {
           </div>
         </section>
         <section className="collection-contents-section" id="recebe">
-          <motion.div className="section-heading" {...fade}>
-            <p className="eyebrow">UMA SOLUÇÃO PARA CONSULTAR DE VERDADE</p>
-            <h2>Da babosa ao chá da tarde, tudo no seu devido lugar</h2>
-            <p>
-              A Vovó Tereza organizou receitas tradicionais em cadernos
-              temáticos, com linguagem simples e atenção ao modo de preparo.
-            </p>
+          <motion.div className="section-heading" {...fade} data-editor-field="contentsHeading">
+            <p className="eyebrow">{config.contentsEyebrow}</p>
+            <h2>{config.contentsTitle}</h2>
+            <p>{config.contentsDescription}</p>
           </motion.div>
-          <div className="recipe-grid">
-            {[
-              'Babosa e cabelos',
-              'Chás e infusões',
-              'Rotina mais leve',
-              'Ingredientes tradicionais',
-            ].map((title, index) => (
+          <div className="recipe-grid" data-editor-field="contentsItems">
+            {config.contentsItems.map(({ title, text }, index) => (
               <motion.article key={title} className="recipe-card" {...fade}>
                 <span>0{index + 1}</span>
                 <h3>{title}</h3>
-                <p>
-                  {
-                    [
-                      'Preparos externos para hidratação e cuidado dos fios, com orientações de teste antes do uso.',
-                      'Combinações tradicionais para transformar uma pausa do dia em ritual de bem-estar.',
-                      'Receitas e hábitos que podem acompanhar objetivos de alimentação equilibrada, sem atalhos milagrosos.',
-                      'Como escolher, conservar e preparar itens conhecidos com mais atenção.',
-                    ][index]
-                  }
-                </p>
+                <p>{text}</p>
               </motion.article>
             ))}
           </div>
@@ -872,14 +772,11 @@ export function Storefront() {
             </div>
           ) : (
             <>
-              <output className="comments-public-empty">
+              <output className="comments-public-empty" data-editor-field="commentsEmpty">
                 <MessageSquareQuote aria-hidden="true" />
                 <div>
-                  <strong>Relatos em preparação</strong>
-                  <p>
-                    Os primeiros comentários serão publicados assim que as
-                    clientes autorizarem o compartilhamento.
-                  </p>
+                  <strong>{config.commentsEmptyTitle}</strong>
+                  <p>{config.commentsEmptyText}</p>
                 </div>
               </output>
               {isEditorPreview && (
@@ -958,12 +855,12 @@ export function Storefront() {
           )}
         </section>
         <section className="benefits">
-          <motion.div {...fade}>
-            <p className="eyebrow">FEITO PARA MULHERES REAIS</p>
-            <h2>Menos informação solta. Mais clareza para cuidar de você.</h2>
+          <motion.div {...fade} data-editor-field="benefitsHeading">
+            <p className="eyebrow">{config.benefitsEyebrow}</p>
+            <h2>{config.benefitsTitle}</h2>
           </motion.div>
-          <div className="benefit-list">
-            {benefits.map(([title, text], i) => (
+          <div className="benefit-list" data-editor-field="benefitsItems">
+            {config.benefitsItems.map(({ title, text }, i) => (
               <motion.div key={title} {...fade}>
                 <span>{i + 1}</span>
                 <div>
@@ -986,22 +883,14 @@ export function Storefront() {
               />
             )}
           </div>
-          <div className="founder-copy">
-            <p className="eyebrow">DA MINHA CASA PARA A SUA</p>
-            <h2>Eu sou Tereza. Antes de ser autora, sou mãe e avó.</h2>
-            <p>
-              Por muitos anos, guardei em cadernos os preparos que aprendi com
-              as mulheres da minha família e adaptei na rotina da minha própria
-              casa.
-            </p>
-            <p>
-              Criei esta coleção para que esse conhecimento não se perdesse e
-              para que outras mulheres pudessem consultar cada receita com
-              calma, sem depender de vídeos salvos ou anotações incompletas.
-            </p>
-            <p className="founder-signature">Com carinho, Vovó Tereza.</p>
+          <div className="founder-copy" data-editor-field="founderContent">
+            <p className="eyebrow">{config.founderEyebrow}</p>
+            <h2>{config.founderTitle}</h2>
+            <p>{config.founderBodyOne}</p>
+            <p>{config.founderBodyTwo}</p>
+            <p className="founder-signature">{config.founderSignature}</p>
             <a href="#ofertas" className="secondary-button">
-              VER AS OPÇÕES DE CADERNOS
+              {config.founderCtaText}
             </a>
           </div>
         </motion.section>
@@ -1011,6 +900,7 @@ export function Storefront() {
             products={products}
             testimonials={testimonials}
             customerPhotos={config.customerPhotos}
+            content={config}
             value={selectedBundle}
             onChange={(bundleId) => {
               setSelectedBundle(bundleId);
@@ -1089,21 +979,21 @@ export function Storefront() {
           </p>
         </section>
         <section className="faq" id="duvidas">
-          <div>
-            <p className="eyebrow">DÚVIDAS FREQUENTES</p>
-            <h2>O que você precisa saber antes de comprar</h2>
+          <div data-editor-field="faqHeading">
+            <p className="eyebrow">{config.faqEyebrow}</p>
+            <h2>{config.faqTitle}</h2>
           </div>
-          <div>
-            {faqs.map(([q, a], i) => (
-              <div className="faq-item" key={q}>
+          <div data-editor-field="faqItems">
+            {config.faqItems.map(({ question, answer }, i) => (
+              <div className="faq-item" key={question}>
                 <button
                   aria-expanded={openFaq === i}
                   onClick={() => {
                     setOpenFaq(openFaq === i ? null : i);
-                    track('faq_open', { question: q });
+                    track('faq_open', { question });
                   }}
                 >
-                  <span>{q}</span>
+                  <span>{question}</span>
                   <ChevronDown className={openFaq === i ? 'rotate' : ''} />
                 </button>
                 <AnimatePresence>
@@ -1113,7 +1003,7 @@ export function Storefront() {
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={reduceMotion ? {} : { height: 0, opacity: 0 }}
                     >
-                      {a}
+                      {answer}
                     </motion.p>
                   )}
                 </AnimatePresence>
@@ -1126,13 +1016,10 @@ export function Storefront() {
         <div className="brand">
           <BrandLogo />
         </div>
-        <p>
-          Receitas naturais e conhecimentos de família, organizados com cuidado
-          e responsabilidade.
-        </p>
-        <nav className="social-links" aria-label="Redes sociais da Vovó Tereza">
+        <p data-editor-field="footerText">{config.footerText}</p>
+        <nav className="social-links" aria-label="Redes sociais da Vovó Tereza" data-editor-field="footerSocial">
           <a
-            href="https://www.facebook.com/avovotereza"
+            href={config.facebookUrl}
             target="_blank"
             rel="noreferrer"
             aria-label="Vovó Tereza no Facebook"
@@ -1141,7 +1028,7 @@ export function Storefront() {
             <IconsaxFacebook aria-hidden="true" />
           </a>
           <a
-            href="https://www.instagram.com/avovotereza/"
+            href={config.instagramUrl}
             target="_blank"
             rel="noreferrer"
             aria-label="Vovó Tereza no Instagram"
@@ -1150,7 +1037,7 @@ export function Storefront() {
             <IconsaxInstagram aria-hidden="true" />
           </a>
           <a
-            href="https://www.tiktok.com/@avovoterezatktk"
+            href={config.tiktokUrl}
             target="_blank"
             rel="noreferrer"
             aria-label="Vovó Tereza no TikTok"
@@ -1159,7 +1046,7 @@ export function Storefront() {
             <IconsaxTiktok aria-hidden="true" />
           </a>
           <a
-            href="https://www.youtube.com/@avovotereza"
+            href={config.youtubeUrl}
             target="_blank"
             rel="noreferrer"
             aria-label="Vovó Tereza no YouTube"
@@ -1173,9 +1060,8 @@ export function Storefront() {
           <Link href="/termos">Termos</Link>
           <Link href="/reembolso">Reembolso</Link>
         </nav>
-        <small>
-          © {new Date().getFullYear()} Vovó Tereza. Todos os direitos
-          reservados.
+        <small data-editor-field="footerCopyright">
+          © {new Date().getFullYear()} {config.footerCopyright}
         </small>
       </footer>
       <AnimatePresence>
@@ -1234,7 +1120,7 @@ export function Storefront() {
                     addBundle(selectedBundleData.id);
                   }}
                 >
-                  APROVEITAR OFERTA
+                  {config.floatingCtaText}
                 </button>
               </div>
             </motion.aside>
@@ -1261,7 +1147,10 @@ export function Storefront() {
               exit={reduceMotion ? {} : { x: '100%' }}
               transition={{ duration: 0.28 }}
             >
-              <header className="cart-banner">
+              <header
+                className="cart-banner"
+                data-editor-field={cart.length ? 'cartBannerFilled' : 'cartBannerEmpty'}
+              >
                 <h2 id="cart-title" className="sr-only">
                   Carrinho
                 </h2>
@@ -1283,21 +1172,19 @@ export function Storefront() {
                 </button>
               </header>
               {!cart.length ? (
-                <div className="empty-cart">
+                <div className="empty-cart" data-editor-field="cartEmptyContent">
                   <div className="empty-cart-icon" aria-hidden="true">
                     <ShoppingBag />
                   </div>
-                  <h3>Seu carrinho está vazio</h3>
-                  <p>Escolha uma das coleções para ver o resumo aqui.</p>
+                  <h3>{config.cartEmptyTitle}</h3>
+                  <p>{config.cartEmptyText}</p>
                   <button
                     className="primary-button"
                     onClick={() => setDrawerOpen(false)}
                   >
-                    CONTINUAR ESCOLHENDO
+                    {config.cartEmptyCtaText}
                   </button>
-                  <small>
-                    Compra segura e acesso digital após a confirmação.
-                  </small>
+                  <small>{config.cartEmptyNote}</small>
                 </div>
               ) : (
                 <>
@@ -1325,8 +1212,8 @@ export function Storefront() {
                           <small>
                             {line.kind === 'bundle'
                               ? getBundle(line.id)?.productIds.length +
-                                ' itens digitais'
-                              : 'Produto digital'}
+                                ` ${config.cartBundleItemLabel}`
+                              : config.cartProductItemLabel}
                           </small>
                           <button
                             onClick={() =>
@@ -1335,7 +1222,7 @@ export function Storefront() {
                               )
                             }
                           >
-                            Remover
+                            {config.cartRemoveText}
                           </button>
                         </div>
                         <span>{formatMoney(line.price)}</span>
@@ -1367,19 +1254,19 @@ export function Storefront() {
                           </>
                         )}
                       </div>
-                      <div className="offer-card-copy">
-                        <span>OFERTA ADICIONAL</span>
+                      <div className="offer-card-copy" data-editor-field="cartBumpCopy">
+                        <span>{config.cartBumpEyebrow}</span>
                         <h3>{orderBump.headline}</h3>
                         <p>{orderBump.description}</p>
                         <div className="offer-recipe-preview">
-                          <small>RECEITA DO CADERNO</small>
+                          <small>{config.cartBumpRecipeLabel}</small>
                           <strong>
-                            {bumpRecipePreviews[offerRecipeIndexes.bump].title}
+                            {config.cartBumpRecipes[offerRecipeIndexes.bump % config.cartBumpRecipes.length].title}
                           </strong>
                           <p>
                             {
-                              bumpRecipePreviews[offerRecipeIndexes.bump]
-                                .summary
+                              config.cartBumpRecipes[offerRecipeIndexes.bump % config.cartBumpRecipes.length]
+                                .text
                             }
                           </p>
                         </div>
@@ -1393,7 +1280,7 @@ export function Storefront() {
                             )
                           }
                         >
-                          <Plus aria-hidden="true" /> ADICIONAR POR{' '}
+                          <Plus aria-hidden="true" /> {config.cartAddCtaPrefix}{' '}
                           {formatMoney(orderBump.price)}
                         </button>
                       </div>
@@ -1424,24 +1311,24 @@ export function Storefront() {
                           </>
                         )}
                       </div>
-                      <div className="offer-card-copy">
-                        <span>PARA COMPLETAR</span>
+                      <div className="offer-card-copy" data-editor-field="cartOfferCopy">
+                        <span>{config.cartOfferEyebrow}</span>
                         <h3>{cartOffer.headline}</h3>
                         <p>{cartOffer.description}</p>
                         <div className="offer-recipe-preview">
-                          <small>RECEITA DO GUIA</small>
+                          <small>{config.cartOfferRecipeLabel}</small>
                           <strong>
                             {
-                              ingredientRecipePreviews[
-                                offerRecipeIndexes.ingredients
+                              config.cartOfferRecipes[
+                                offerRecipeIndexes.ingredients % config.cartOfferRecipes.length
                               ].title
                             }
                           </strong>
                           <p>
                             {
-                              ingredientRecipePreviews[
-                                offerRecipeIndexes.ingredients
-                              ].summary
+                              config.cartOfferRecipes[
+                                offerRecipeIndexes.ingredients % config.cartOfferRecipes.length
+                              ].text
                             }
                           </p>
                         </div>
@@ -1455,28 +1342,33 @@ export function Storefront() {
                             )
                           }
                         >
-                          <Plus aria-hidden="true" /> ADICIONAR POR{' '}
+                          <Plus aria-hidden="true" /> {config.cartAddCtaPrefix}{' '}
                           {formatMoney(cartOffer.price)}
                         </button>
                       </div>
                     </div>
                   )}
-                  <CustomerStories compact stories={testimonialStories} />
-                  <div className="cart-summary">
+                  <CustomerStories
+                    compact
+                    stories={testimonialStories}
+                    eyebrow={config.galleryEyebrow}
+                    title={config.galleryTitle}
+                    compactTitle={config.cartGalleryTitle}
+                  />
+                  <div className="cart-summary" data-editor-field="cartSummaryCopy">
                     <div className="cart-total-row">
-                      <span>Subtotal</span>
+                      <span>{config.cartSubtotalLabel}</span>
                       <strong>{formatMoney(subtotal)}</strong>
                     </div>
                     <div
                       className="cart-savings-row"
                       data-has-savings={savings > 0}
                     >
-                      <span>Economia neste pedido</span>
+                      <span>{config.cartSavingsLabel}</span>
                       <strong>{formatMoney(savings)}</strong>
                     </div>
                     <p>
-                      <LockKeyhole aria-hidden="true" /> Pagamento seguro.
-                      Produto digital. Entrega após confirmação.
+                      <LockKeyhole aria-hidden="true" /> {config.cartSecurityText}
                     </p>
                     {checkoutError && (
                       <div className="form-error" role="alert">
@@ -1489,10 +1381,10 @@ export function Storefront() {
                       disabled={checkingOut}
                     >
                       {checkingOut
-                        ? 'PREPARANDO PAGAMENTO...'
-                        : 'IR PARA O PAGAMENTO'}
+                        ? config.cartCheckoutLoadingText
+                        : config.cartCheckoutCtaText}
                     </button>
-                    <PaymentMethods />
+                    <PaymentMethods note={config.paymentNote} securityText={config.paymentSecurityText} />
                   </div>
                 </>
               )}

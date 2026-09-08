@@ -6,6 +6,7 @@ import type {
   CatalogConfig,
   ExitOffer,
   Product,
+  SiteConfig,
   Testimonial,
 } from '@/lib/catalog';
 import {
@@ -50,31 +51,7 @@ import {
 } from 'react';
 import Image from 'next/image';
 
-type Config = {
-  heroBadge: string;
-  heroTitle: string;
-  heroSubtitle: string;
-  ctaText: string;
-  urgencyText: string;
-  heroImage: string;
-  founderImage: string;
-  cartBannerEmpty: string;
-  cartBannerFilled: string;
-  customerPhotos: { id: string; src: string; alt: string }[];
-  comparisonEyebrow: string;
-  comparisonTitle: string;
-  comparisonDescription: string;
-  comparisonCtaText: string;
-  comparisonFeatureLabel: string;
-  comparisonPrimaryLabel: string;
-  comparisonSecondaryLabel: string;
-  comparisonItems: string[];
-  comparisonNote: string;
-  commentsEyebrow: string;
-  commentsTitle: string;
-  commentsSubtitle: string;
-  seoTitle: string;
-  seoDescription: string;
+type Config = SiteConfig & {
   keyword: string;
   metaPixelId: string;
   googleAnalyticsId: string;
@@ -94,20 +71,45 @@ type AdminOrder = {
 
 type EditorSection =
   | 'offer'
+  | 'navigation'
   | 'hero'
+  | 'proof'
+  | 'pain'
+  | 'contents'
+  | 'benefits'
   | 'story'
+  | 'offers'
   | 'gallery'
   | 'comparison'
-  | 'comments';
+  | 'comments'
+  | 'faq'
+  | 'footer'
+  | 'cart';
 type EditorField =
   | 'urgencyText'
+  | 'navLabels'
   | 'heroBadge'
   | 'heroTitle'
   | 'heroSubtitle'
   | 'heroImage'
   | 'ctaText'
+  | 'heroBenefits'
+  | 'heroPrice'
+  | 'heroMicrocopy'
+  | 'heroCard'
+  | 'proofItems'
+  | 'painHeading'
+  | 'painItems'
+  | 'contentsHeading'
+  | 'contentsItems'
+  | 'benefitsHeading'
+  | 'benefitsItems'
   | 'founderImage'
+  | 'founderContent'
+  | 'collectionHeading'
+  | 'collectionBenefits'
   | 'gallery'
+  | 'galleryCopy'
   | 'comparisonEyebrow'
   | 'comparisonTitle'
   | 'comparisonDescription'
@@ -118,17 +120,45 @@ type EditorField =
   | 'commentsEyebrow'
   | 'commentsTitle'
   | 'commentsSubtitle'
-  | 'commentsList';
+  | 'commentsEmpty'
+  | 'commentsList'
+  | 'faqHeading'
+  | 'faqItems'
+  | 'footerText'
+  | 'footerSocial'
+  | 'footerCopyright'
+  | 'cartBannerEmpty'
+  | 'cartBannerFilled'
+  | 'cartEmptyContent'
+  | 'cartBumpCopy'
+  | 'cartOfferCopy'
+  | 'cartSummaryCopy';
 
 const editorFieldLabels: Record<EditorField, string> = {
   urgencyText: 'Mensagem da oferta',
+  navLabels: 'Menu principal',
   heroBadge: 'Selo principal',
   heroTitle: 'Título principal',
   heroSubtitle: 'Texto de apresentação',
   heroImage: 'Imagem principal',
   ctaText: 'Botão principal',
+  heroBenefits: 'Destaques da abertura',
+  heroPrice: 'Apresentação do preço',
+  heroMicrocopy: 'Segurança da compra',
+  heroCard: 'Selo sobre a imagem',
+  proofItems: 'Faixa de benefícios',
+  painHeading: 'Introdução do problema',
+  painItems: 'Cards do problema',
+  contentsHeading: 'Introdução dos conteúdos',
+  contentsItems: 'Cards dos conteúdos',
+  benefitsHeading: 'Título dos benefícios',
+  benefitsItems: 'Lista de benefícios',
   founderImage: 'Foto da Vovó Tereza',
+  founderContent: 'História da Vovó Tereza',
+  collectionHeading: 'Apresentação das ofertas',
+  collectionBenefits: 'Benefícios das ofertas',
   gallery: 'Fotos de clientes',
+  galleryCopy: 'Título das fotos de clientes',
   comparisonEyebrow: 'Selo da comparação',
   comparisonTitle: 'Título da comparação',
   comparisonDescription: 'Descrição da comparação',
@@ -139,7 +169,19 @@ const editorFieldLabels: Record<EditorField, string> = {
   commentsEyebrow: 'Selo dos comentários',
   commentsTitle: 'Título dos comentários',
   commentsSubtitle: 'Texto dos comentários',
+  commentsEmpty: 'Estado sem comentários',
   commentsList: 'Comentários publicados',
+  faqHeading: 'Título das dúvidas',
+  faqItems: 'Perguntas e respostas',
+  footerText: 'Texto do rodapé',
+  footerSocial: 'Links das redes sociais',
+  footerCopyright: 'Direitos autorais',
+  cartBannerEmpty: 'Banner do carrinho vazio',
+  cartBannerFilled: 'Banner do carrinho com produtos',
+  cartEmptyContent: 'Carrinho vazio',
+  cartBumpCopy: 'Textos da oferta adicional',
+  cartOfferCopy: 'Textos para completar a coleção',
+  cartSummaryCopy: 'Resumo e botão de pagamento',
 };
 
 const nav = [
@@ -200,6 +242,7 @@ export function AdminDashboard({
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>(
     'desktop',
   );
+  const [previewSurface, setPreviewSurface] = useState<'page' | 'cart-empty' | 'cart-filled'>('page');
   const previewRef = useRef<HTMLIFrameElement>(null);
   const previewFrameRef = useRef<HTMLDivElement>(null);
   const [desktopPreviewScale, setDesktopPreviewScale] = useState(1);
@@ -212,13 +255,29 @@ export function AdminDashboard({
   function selectEditorField(field: EditorField) {
     const sectionByField: Record<EditorField, EditorSection> = {
       urgencyText: 'offer',
+      navLabels: 'navigation',
       heroBadge: 'hero',
       heroTitle: 'hero',
       heroSubtitle: 'hero',
       heroImage: 'hero',
       ctaText: 'hero',
+      heroBenefits: 'hero',
+      heroPrice: 'hero',
+      heroMicrocopy: 'hero',
+      heroCard: 'hero',
+      proofItems: 'proof',
+      painHeading: 'pain',
+      painItems: 'pain',
+      contentsHeading: 'contents',
+      contentsItems: 'contents',
+      benefitsHeading: 'benefits',
+      benefitsItems: 'benefits',
       founderImage: 'story',
+      founderContent: 'story',
+      collectionHeading: 'offers',
+      collectionBenefits: 'offers',
       gallery: 'gallery',
+      galleryCopy: 'gallery',
       comparisonEyebrow: 'comparison',
       comparisonTitle: 'comparison',
       comparisonDescription: 'comparison',
@@ -229,10 +288,27 @@ export function AdminDashboard({
       commentsEyebrow: 'comments',
       commentsTitle: 'comments',
       commentsSubtitle: 'comments',
+      commentsEmpty: 'comments',
       commentsList: 'comments',
+      faqHeading: 'faq',
+      faqItems: 'faq',
+      footerText: 'footer',
+      footerSocial: 'footer',
+      footerCopyright: 'footer',
+      cartBannerEmpty: 'cart',
+      cartBannerFilled: 'cart',
+      cartEmptyContent: 'cart',
+      cartBumpCopy: 'cart',
+      cartOfferCopy: 'cart',
+      cartSummaryCopy: 'cart',
     };
     setSelectedEditorField(field);
     setEditorSection(sectionByField[field]);
+    if (sectionByField[field] === 'cart') {
+      setPreviewSurface(field === 'cartBannerEmpty' || field === 'cartEmptyContent' ? 'cart-empty' : 'cart-filled');
+    } else {
+      setPreviewSurface('page');
+    }
   }
 
   const updatePreview = useCallback(() => {
@@ -247,29 +323,7 @@ export function AdminDashboard({
       if (event.origin !== window.location.origin) return;
       if (event.data?.type !== 'vovo-editor-select') return;
       const field = event.data.field as EditorField;
-      if (
-        [
-          'urgencyText',
-          'heroBadge',
-          'heroTitle',
-          'heroSubtitle',
-          'heroImage',
-          'ctaText',
-          'founderImage',
-          'gallery',
-          'comparisonEyebrow',
-          'comparisonTitle',
-          'comparisonDescription',
-          'comparisonCtaText',
-          'comparisonColumns',
-          'comparisonItems',
-          'comparisonNote',
-          'commentsEyebrow',
-          'commentsTitle',
-          'commentsSubtitle',
-          'commentsList',
-        ].includes(field)
-      )
+      if (field in editorFieldLabels)
         selectEditorField(field);
     };
     window.addEventListener('message', handleMessage);
@@ -311,10 +365,18 @@ export function AdminDashboard({
       body: JSON.stringify(config),
     });
     const data = (await response.json()) as { error?: string };
+    let catalogResponse: Response | null = null;
+    if (response.ok && active === 'Editor da página') {
+      catalogResponse = await fetch('/api/catalog', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(catalog),
+      });
+    }
     setMessage(
-      response.ok
+      response.ok && (!catalogResponse || catalogResponse.ok)
         ? 'Alterações salvas na loja.'
-        : data.error || 'Não foi possível salvar.',
+        : data.error || 'Não foi possível salvar todas as alterações.',
     );
     setSaving(false);
   }
@@ -409,7 +471,7 @@ export function AdminDashboard({
     }
   }
   const input = (
-    key: Exclude<keyof Config, 'customerPhotos' | 'comparisonItems'>,
+    key: { [K in keyof Config]: Config[K] extends string ? K : never }[keyof Config],
     label: string,
     area = false,
   ) => (
@@ -431,6 +493,68 @@ export function AdminDashboard({
         />
       )}
     </label>
+  );
+  const stringList = (
+    key: 'navLabels' | 'heroBenefits' | 'proofItems' | 'collectionBenefits',
+    labels: string[],
+  ) => (
+    <div className="page-editor-list-fields">
+      {config[key].map((value, index) => (
+        <label key={`${key}-${index}`}>
+          {labels[index] || `Item ${index + 1}`}
+          <input
+            value={value}
+            onChange={(event) =>
+              setConfig({
+                ...config,
+                [key]: config[key].map((item, itemIndex) =>
+                  itemIndex === index ? event.target.value : item,
+                ),
+              })
+            }
+          />
+        </label>
+      ))}
+    </div>
+  );
+  const cardList = (
+    key: 'painItems' | 'contentsItems' | 'benefitsItems' | 'cartBumpRecipes' | 'cartOfferRecipes',
+  ) => (
+    <div className="page-editor-card-fields">
+      {config[key].map((item, index) => (
+        <fieldset key={`${key}-${index}`}>
+          <legend>Card {index + 1}</legend>
+          <label>
+            Título
+            <input
+              value={item.title}
+              onChange={(event) =>
+                setConfig({
+                  ...config,
+                  [key]: config[key].map((current, itemIndex) =>
+                    itemIndex === index ? { ...current, title: event.target.value } : current,
+                  ),
+                })
+              }
+            />
+          </label>
+          <label>
+            Texto
+            <textarea
+              value={item.text}
+              onChange={(event) =>
+                setConfig({
+                  ...config,
+                  [key]: config[key].map((current, itemIndex) =>
+                    itemIndex === index ? { ...current, text: event.target.value } : current,
+                  ),
+                })
+              }
+            />
+          </label>
+        </fieldset>
+      ))}
+    </div>
   );
   const notice = message && (
     <output
@@ -1463,11 +1587,20 @@ export function AdminDashboard({
                 {(
                   [
                     ['offer', 'Faixa de oferta', Megaphone],
+                    ['navigation', 'Menu', Columns3],
                     ['hero', 'Seção principal', ImagePlus],
+                    ['proof', 'Faixa de benefícios', CheckCircle2],
+                    ['pain', 'Problemas', MessageSquareQuote],
+                    ['contents', 'Conteúdos', BookOpen],
+                    ['benefits', 'Benefícios', CheckCircle2],
                     ['story', 'História da Tereza', BookOpen],
+                    ['offers', 'Ofertas', CircleDollarSign],
                     ['gallery', 'Fotos de clientes', Images],
                     ['comparison', 'Comparação', Columns3],
                     ['comments', 'Comentários', MessageSquareQuote],
+                    ['faq', 'Dúvidas', MessageSquareQuote],
+                    ['footer', 'Rodapé', FileText],
+                    ['cart', 'Carrinho', ShoppingCart],
                   ] as const
                 ).map(([id, label, Icon]) => (
                   <button
@@ -1489,15 +1622,25 @@ export function AdminDashboard({
                   {(
                     {
                       offer: [['urgencyText', 'Mensagem da oferta']],
+                      navigation: [['navLabels', 'Links do menu']],
                       hero: [
                         ['heroBadge', 'Selo'],
                         ['heroTitle', 'Título'],
                         ['heroSubtitle', 'Apresentação'],
                         ['heroImage', 'Imagem'],
                         ['ctaText', 'Botão'],
+                        ['heroBenefits', 'Destaques'],
+                        ['heroPrice', 'Preço'],
+                        ['heroMicrocopy', 'Segurança'],
+                        ['heroCard', 'Selo da imagem'],
                       ],
-                      story: [['founderImage', 'Foto da autora']],
-                      gallery: [['gallery', 'Galeria rolante']],
+                      proof: [['proofItems', 'Itens da faixa']],
+                      pain: [['painHeading', 'Introdução'], ['painItems', 'Cards']],
+                      contents: [['contentsHeading', 'Introdução'], ['contentsItems', 'Cards']],
+                      benefits: [['benefitsHeading', 'Título'], ['benefitsItems', 'Lista']],
+                      story: [['founderImage', 'Foto da autora'], ['founderContent', 'Textos']],
+                      offers: [['collectionHeading', 'Introdução'], ['collectionBenefits', 'Benefícios']],
+                      gallery: [['galleryCopy', 'Título'], ['gallery', 'Galeria rolante']],
                       comparison: [
                         ['comparisonEyebrow', 'Selo'],
                         ['comparisonTitle', 'Título'],
@@ -1511,7 +1654,18 @@ export function AdminDashboard({
                         ['commentsEyebrow', 'Selo'],
                         ['commentsTitle', 'Título'],
                         ['commentsSubtitle', 'Texto de apoio'],
+                        ['commentsEmpty', 'Estado vazio'],
                         ['commentsList', 'Relatos'],
+                      ],
+                      faq: [['faqHeading', 'Título'], ['faqItems', 'Perguntas']],
+                      footer: [['footerText', 'Apresentação'], ['footerSocial', 'Redes sociais'], ['footerCopyright', 'Direitos autorais']],
+                      cart: [
+                        ['cartBannerEmpty', 'Banner vazio'],
+                        ['cartBannerFilled', 'Banner com produtos'],
+                        ['cartEmptyContent', 'Estado vazio'],
+                        ['cartBumpCopy', 'Oferta adicional'],
+                        ['cartOfferCopy', 'Oferta complementar'],
+                        ['cartSummaryCopy', 'Resumo e pagamento'],
                       ],
                     }[editorSection] as [EditorField, string][]
                   ).map(([field, label]) => (
@@ -1531,6 +1685,15 @@ export function AdminDashboard({
                 <div className="page-editor-canvas-toolbar">
                   <span>Clique em um texto ou imagem para editar</span>
                   <div className="page-editor-device-buttons">
+                    <select
+                      aria-label="Conteúdo da prévia"
+                      value={previewSurface}
+                      onChange={(event) => setPreviewSurface(event.target.value as typeof previewSurface)}
+                    >
+                      <option value="page">Página de vendas</option>
+                      <option value="cart-empty">Carrinho vazio</option>
+                      <option value="cart-filled">Carrinho com produtos</option>
+                    </select>
                     <button
                       type="button"
                       className={previewDevice === 'desktop' ? 'active' : ''}
@@ -1563,8 +1726,9 @@ export function AdminDashboard({
                   className={`page-editor-frame ${previewDevice}`}
                 >
                   <iframe
+                    key={previewSurface}
                     ref={previewRef}
-                    src="/?editorPreview=1"
+                    src={previewSurface === 'page' ? '/?editorPreview=1' : `/?editorPreview=1&editorCart=${previewSurface === 'cart-empty' ? 'empty' : 'filled'}`}
                     title="Prévia editável da página de vendas"
                     style={
                       previewDevice === 'desktop'
@@ -1595,6 +1759,12 @@ export function AdminDashboard({
               </section>
               {selectedEditorField && (
                 <section className="page-editor-inspector">
+                  {editorSection === 'navigation' && (
+                    <div className="page-editor-fields">
+                      <header><Columns3 /><div><h3>Menu principal</h3><p>Edite os nomes dos links de navegação.</p></div></header>
+                      {stringList('navLabels', ['Início', 'Segundo link', 'Terceiro link', 'Quarto link'])}
+                    </div>
+                  )}
                   {editorSection === 'offer' && (
                     <div className="page-editor-fields">
                       <header>
@@ -1644,6 +1814,44 @@ export function AdminDashboard({
                         input('heroSubtitle', 'Texto de apresentação', true)}
                       {selectedEditorField === 'ctaText' &&
                         input('ctaText', 'Texto do botão')}
+                      {selectedEditorField === 'heroBenefits' &&
+                        stringList('heroBenefits', ['Destaque 1', 'Destaque 2', 'Destaque 3', 'Destaque 4'])}
+                      {selectedEditorField === 'heroPrice' && <>
+                        {input('heroPriceLabel', 'Texto acima do preço')}
+                        {input('heroPriceSuffix', 'Texto ao lado do preço')}
+                      </>}
+                      {selectedEditorField === 'heroMicrocopy' && input('heroMicrocopy', 'Mensagem de segurança', true)}
+                      {selectedEditorField === 'heroCard' && <>
+                        {input('heroCardTitle', 'Título do selo')}
+                        {input('heroCardSubtitle', 'Texto do selo')}
+                      </>}
+                    </div>
+                  )}
+                  {editorSection === 'proof' && (
+                    <div className="page-editor-fields">
+                      <header><CheckCircle2 /><div><h3>Faixa de benefícios</h3><p>Itens exibidos na faixa rolante.</p></div></header>
+                      {stringList('proofItems', ['Item 1', 'Item 2', 'Item 3'])}
+                    </div>
+                  )}
+                  {editorSection === 'pain' && (
+                    <div className="page-editor-fields">
+                      <header><MessageSquareQuote /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Conteúdo da seção de identificação.</p></div></header>
+                      {selectedEditorField === 'painHeading' && <>{input('painEyebrow', 'Selo')}{input('painTitle', 'Título', true)}{input('painDescription', 'Descrição', true)}</>}
+                      {selectedEditorField === 'painItems' && cardList('painItems')}
+                    </div>
+                  )}
+                  {editorSection === 'contents' && (
+                    <div className="page-editor-fields">
+                      <header><BookOpen /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Conteúdo da apresentação dos cadernos.</p></div></header>
+                      {selectedEditorField === 'contentsHeading' && <>{input('contentsEyebrow', 'Selo')}{input('contentsTitle', 'Título', true)}{input('contentsDescription', 'Descrição', true)}</>}
+                      {selectedEditorField === 'contentsItems' && cardList('contentsItems')}
+                    </div>
+                  )}
+                  {editorSection === 'benefits' && (
+                    <div className="page-editor-fields">
+                      <header><CheckCircle2 /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Benefícios apresentados na página.</p></div></header>
+                      {selectedEditorField === 'benefitsHeading' && <>{input('benefitsEyebrow', 'Selo')}{input('benefitsTitle', 'Título', true)}</>}
+                      {selectedEditorField === 'benefitsItems' && cardList('benefitsItems')}
                     </div>
                   )}
                   {editorSection === 'story' && (
@@ -1655,20 +1863,32 @@ export function AdminDashboard({
                           <p>Foto da autora usada na apresentação da marca.</p>
                         </div>
                       </header>
-                      <AdminImageField
-                        label="Foto da Vovó Tereza"
-                        value={config.founderImage}
-                        aspect="portrait"
-                        onChange={(event) =>
-                          void replacePageImage(
-                            event.target.files?.[0],
-                            'founderImage',
-                          )
-                        }
-                        onRemove={() =>
-                          setConfig({ ...config, founderImage: '' })
-                        }
-                      />
+                      {selectedEditorField === 'founderImage' && (
+                        <AdminImageField
+                          label="Foto da Vovó Tereza"
+                          value={config.founderImage}
+                          aspect="portrait"
+                          onChange={(event) =>
+                            void replacePageImage(event.target.files?.[0], 'founderImage')
+                          }
+                          onRemove={() => setConfig({ ...config, founderImage: '' })}
+                        />
+                      )}
+                      {selectedEditorField === 'founderContent' && <>
+                        {input('founderEyebrow', 'Selo')}
+                        {input('founderTitle', 'Título', true)}
+                        {input('founderBodyOne', 'Primeiro parágrafo', true)}
+                        {input('founderBodyTwo', 'Segundo parágrafo', true)}
+                        {input('founderSignature', 'Assinatura')}
+                        {input('founderCtaText', 'Texto do botão')}
+                      </>}
+                    </div>
+                  )}
+                  {editorSection === 'offers' && (
+                    <div className="page-editor-fields">
+                      <header><CircleDollarSign /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Textos gerais das ofertas; produtos e preços ficam nas áreas próprias.</p></div></header>
+                      {selectedEditorField === 'collectionHeading' && <>{input('collectionEyebrow', 'Selo')}{input('collectionTitle', 'Título', true)}{input('collectionSubtitle', 'Descrição', true)}{input('collectionCtaText', 'Texto do botão')}{input('paymentNote', 'Observação do pagamento', true)}</>}
+                      {selectedEditorField === 'collectionBenefits' && stringList('collectionBenefits', ['Benefício 1', 'Benefício 2', 'Benefício 3', 'Benefício 4'])}
                     </div>
                   )}
                   {editorSection === 'gallery' && (
@@ -1683,7 +1903,7 @@ export function AdminDashboard({
                           </p>
                         </div>
                       </header>
-                      <label className="admin-gallery-add">
+                      {selectedEditorField === 'gallery' && <label className="admin-gallery-add">
                         <ImagePlus />
                         <span>Adicionar fotos</span>
                         <small>
@@ -1699,8 +1919,13 @@ export function AdminDashboard({
                             event.target.value = '';
                           }}
                         />
-                      </label>
-                      {config.customerPhotos.length ? (
+                      </label>}
+                      {selectedEditorField === 'galleryCopy' && <>
+                        {input('galleryEyebrow', 'Selo')}
+                        {input('galleryTitle', 'Título na página')}
+                        {input('cartGalleryTitle', 'Título no carrinho')}
+                      </>}
+                      {selectedEditorField === 'gallery' && (config.customerPhotos.length ? (
                         <div className="admin-gallery-grid">
                           {config.customerPhotos.map((photo, index) => (
                             <article
@@ -1781,7 +2006,7 @@ export function AdminDashboard({
                             clientes.
                           </span>
                         </div>
-                      )}
+                      ))}
                     </div>
                   )}
                   {editorSection === 'comparison' && (
@@ -1900,6 +2125,10 @@ export function AdminDashboard({
                         input('commentsTitle', 'Título dos comentários', true)}
                       {selectedEditorField === 'commentsSubtitle' &&
                         input('commentsSubtitle', 'Texto de apoio', true)}
+                      {selectedEditorField === 'commentsEmpty' && <>
+                        {input('commentsEmptyTitle', 'Título do estado vazio')}
+                        {input('commentsEmptyText', 'Texto do estado vazio', true)}
+                      </>}
                       {selectedEditorField === 'commentsList' && (
                         <div className="comments-admin-editor">
                           <button
@@ -2066,6 +2295,58 @@ export function AdminDashboard({
                           </div>
                         </div>
                       )}
+                    </div>
+                  )}
+                  {editorSection === 'faq' && (
+                    <div className="page-editor-fields">
+                      <header><MessageSquareQuote /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Edite o título ou cada pergunta exibida.</p></div></header>
+                      {selectedEditorField === 'faqHeading' && <>{input('faqEyebrow', 'Selo')}{input('faqTitle', 'Título', true)}</>}
+                      {selectedEditorField === 'faqItems' && (
+                        <div className="page-editor-card-fields">
+                          {config.faqItems.map((item, index) => (
+                            <fieldset key={`faq-${index}`}>
+                              <legend>Pergunta {index + 1}</legend>
+                              <label>Pergunta<input value={item.question} onChange={(event) => setConfig({...config, faqItems: config.faqItems.map((current, itemIndex) => itemIndex === index ? {...current, question: event.target.value} : current)})} /></label>
+                              <label>Resposta<textarea value={item.answer} onChange={(event) => setConfig({...config, faqItems: config.faqItems.map((current, itemIndex) => itemIndex === index ? {...current, answer: event.target.value} : current)})} /></label>
+                            </fieldset>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {editorSection === 'footer' && (
+                    <div className="page-editor-fields">
+                      <header><FileText /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Conteúdo final da página.</p></div></header>
+                      {selectedEditorField === 'footerText' && input('footerText', 'Texto do rodapé', true)}
+                      {selectedEditorField === 'footerSocial' && <>{input('facebookUrl', 'Facebook')}{input('instagramUrl', 'Instagram')}{input('tiktokUrl', 'TikTok')}{input('youtubeUrl', 'YouTube')}</>}
+                      {selectedEditorField === 'footerCopyright' && input('footerCopyright', 'Direitos autorais')}
+                    </div>
+                  )}
+                  {editorSection === 'cart' && (
+                    <div className="page-editor-fields">
+                      <header><ShoppingCart /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Alterações aparecem no estado correspondente do carrinho.</p></div></header>
+                      {selectedEditorField === 'cartBannerEmpty' && (
+                        <AdminImageField label="Banner do carrinho vazio" value={config.cartBannerEmpty} aspect="wide" onChange={(event) => void replacePageImage(event.target.files?.[0], 'cartBannerEmpty')} onRemove={() => setConfig({...config, cartBannerEmpty: ''})} />
+                      )}
+                      {selectedEditorField === 'cartBannerFilled' && (
+                        <AdminImageField label="Banner do carrinho com produtos" value={config.cartBannerFilled} aspect="wide" onChange={(event) => void replacePageImage(event.target.files?.[0], 'cartBannerFilled')} onRemove={() => setConfig({...config, cartBannerFilled: ''})} />
+                      )}
+                      {selectedEditorField === 'cartEmptyContent' && <>{input('cartEmptyTitle', 'Título')}{input('cartEmptyText', 'Descrição', true)}{input('cartEmptyCtaText', 'Texto do botão')}{input('cartEmptyNote', 'Observação', true)}</>}
+                      {selectedEditorField === 'cartBumpCopy' && <>
+                        {input('cartBumpEyebrow', 'Selo')}
+                        <label>Título<input value={catalog.orderBump.headline} onChange={(event) => setCatalog({...catalog, orderBump: {...catalog.orderBump, headline: event.target.value}})} /></label>
+                        <label>Descrição<textarea value={catalog.orderBump.description} onChange={(event) => setCatalog({...catalog, orderBump: {...catalog.orderBump, description: event.target.value}})} /></label>
+                        {input('cartBumpRecipeLabel', 'Selo da receita')}{input('cartAddCtaPrefix', 'Prefixo do botão')}
+                        {cardList('cartBumpRecipes')}
+                      </>}
+                      {selectedEditorField === 'cartOfferCopy' && <>
+                        {input('cartOfferEyebrow', 'Selo')}
+                        <label>Título<input value={catalog.cartOffer.headline} onChange={(event) => setCatalog({...catalog, cartOffer: {...catalog.cartOffer, headline: event.target.value}})} /></label>
+                        <label>Descrição<textarea value={catalog.cartOffer.description} onChange={(event) => setCatalog({...catalog, cartOffer: {...catalog.cartOffer, description: event.target.value}})} /></label>
+                        {input('cartOfferRecipeLabel', 'Selo da receita')}{input('cartAddCtaPrefix', 'Prefixo do botão')}
+                        {cardList('cartOfferRecipes')}
+                      </>}
+                      {selectedEditorField === 'cartSummaryCopy' && <>{input('cartSubtotalLabel', 'Subtotal')}{input('cartSavingsLabel', 'Economia')}{input('cartSecurityText', 'Mensagem de segurança', true)}{input('cartCheckoutCtaText', 'Botão de pagamento')}{input('cartCheckoutLoadingText', 'Botão durante carregamento')}{input('paymentSecurityText', 'Texto de segurança do pagamento')}{input('paymentNote', 'Observação das formas de pagamento', true)}{input('cartRemoveText', 'Texto para remover item')}{input('cartBundleItemLabel', 'Descrição de bundle')}{input('cartProductItemLabel', 'Descrição de produto')}</>}
                     </div>
                   )}
                 </section>

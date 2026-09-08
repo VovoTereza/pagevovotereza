@@ -19,11 +19,14 @@ import {
 } from '@/lib/catalog';
 import { PaymentIcon } from './payment-icons';
 
-export function PaymentMethods() {
+export function PaymentMethods({
+  note = 'As opções disponíveis são confirmadas no checkout.',
+  securityText = 'Pagamento protegido por',
+}: { note?: string; securityText?: string }) {
   return (
     <div className="payment-methods">
       <p className="payment-security">
-        <LockKeyhole aria-hidden="true" /> Pagamento protegido por{' '}
+        <LockKeyhole aria-hidden="true" /> {securityText}{' '}
         <Image
           src="/images/payments/stripe.svg"
           alt="Stripe"
@@ -46,7 +49,7 @@ export function PaymentMethods() {
           <span className="sr-only">Carteira digital</span>
         </li>
       </ul>
-      <small>As opções disponíveis são confirmadas no checkout.</small>
+      <small>{note}</small>
     </div>
   );
 }
@@ -56,9 +59,15 @@ const customerStories: { src: string; alt: string }[] = [];
 export function CustomerStories({
   compact = false,
   stories = customerStories,
+  eyebrow = 'MULHERES REAIS, ROTINAS REAIS',
+  title = 'Quem escolheu levar os cadernos para casa',
+  compactTitle = 'Quem escolheu os cadernos',
 }: {
   compact?: boolean;
   stories?: { src: string; alt: string }[];
+  eyebrow?: string;
+  title?: string;
+  compactTitle?: string;
 }) {
   const emptySlots = Array.from(
     { length: compact ? 4 : 5 },
@@ -71,17 +80,14 @@ export function CustomerStories({
     <section
       className={`customer-stories${compact ? ' compact' : ''}`}
       aria-labelledby={titleId}
-      data-editor-field="gallery"
     >
-      <div className="customer-stories-heading">
-        <p className="eyebrow">MULHERES REAIS, ROTINAS REAIS</p>
+      <div className="customer-stories-heading" data-editor-field="galleryCopy">
+        <p className="eyebrow">{eyebrow}</p>
         <h3 id={titleId}>
-          {compact
-            ? 'Quem escolheu os cadernos'
-            : 'Quem escolheu levar os cadernos para casa'}
+          {compact ? compactTitle : title}
         </h3>
       </div>
-      <div className="customer-stories-rail">
+      <div className="customer-stories-rail" data-editor-field="gallery">
         <div className="customer-stories-track">
           {[false, true].map((isDuplicate) => (
             <div
@@ -129,6 +135,7 @@ export function BundleSelector({
   value,
   onChange,
   onBuy,
+  content,
 }: {
   bundles: Bundle[];
   products: Product[];
@@ -137,18 +144,27 @@ export function BundleSelector({
   value: string;
   onChange: (value: string) => void;
   onBuy: () => void;
+  content: {
+    collectionEyebrow: string;
+    collectionTitle: string;
+    collectionSubtitle: string;
+    collectionBenefits: string[];
+    collectionCtaText: string;
+    paymentNote: string;
+    paymentSecurityText: string;
+    galleryEyebrow: string;
+    galleryTitle: string;
+    cartGalleryTitle: string;
+  };
 }) {
   const chosen = bundles.find((item) => item.id === value) || bundles[0]!;
   const getProduct = (id: string) => products.find((item) => item.id === id);
   return (
     <div className="collection-picker">
-      <div className="collection-intro">
-        <p className="eyebrow">OS CADERNOS DA VOVÓ TEREZA</p>
-        <h2 id="collection-heading">Escolha como quer começar seu cuidado.</h2>
-        <p className="collection-subtitle">
-          Pagamento único, acesso digital e conteúdo organizado para consultar
-          quando precisar.
-        </p>
+      <div className="collection-intro" data-editor-field="collectionHeading">
+        <p className="eyebrow">{content.collectionEyebrow}</p>
+        <h2 id="collection-heading">{content.collectionTitle}</h2>
+        <p className="collection-subtitle">{content.collectionSubtitle}</p>
         <div className="collection-price" aria-live="polite" aria-atomic="true">
           {chosen.compareAtPrice > chosen.price && (
             <del aria-label="Soma dos preços avulsos">
@@ -163,22 +179,22 @@ export function BundleSelector({
             </span>
           )}
         </div>
-        <ul className="collection-benefits" aria-label="Benefícios da coleção">
+        <ul className="collection-benefits" aria-label="Benefícios da coleção" data-editor-field="collectionBenefits">
           <li>
             <Check aria-hidden="true" />
-            150 receitas organizadas
+            {content.collectionBenefits[0]}
           </li>
           <li>
             <BookOpen aria-hidden="true" />
-            Passo a passo simples
+            {content.collectionBenefits[1]}
           </li>
           <li>
             <Smartphone aria-hidden="true" />
-            Leia no celular
+            {content.collectionBenefits[2]}
           </li>
           <li>
             <Download aria-hidden="true" />
-            Arquivos para baixar
+            {content.collectionBenefits[3]}
           </li>
         </ul>
       </div>
@@ -309,10 +325,13 @@ export function BundleSelector({
           data-purchase-cta
           onClick={onBuy}
         >
-          APROVEITAR OFERTA <span>{formatMoney(chosen.price)}</span>
+          {content.collectionCtaText} <span>{formatMoney(chosen.price)}</span>
         </button>
-        <PaymentMethods />
+        <PaymentMethods note={content.paymentNote} securityText={content.paymentSecurityText} />
         <CustomerStories
+          eyebrow={content.galleryEyebrow}
+          title={content.galleryTitle}
+          compactTitle={content.cartGalleryTitle}
           stories={[
             ...customerPhotos.map((item) => ({ src: item.src, alt: item.alt })),
             ...testimonials
