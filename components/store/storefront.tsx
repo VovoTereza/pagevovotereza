@@ -102,6 +102,7 @@ export function Storefront() {
   const [checkingOut, setCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [floatingBuyVisible, setFloatingBuyVisible] = useState(false);
+  const [cartBannerRatio, setCartBannerRatio] = useState<number | null>(null);
   const isEditorPreview = useSyncExternalStore(
     subscribeToEditorPreview,
     getEditorPreviewSnapshot,
@@ -1148,8 +1149,9 @@ export function Storefront() {
               transition={{ duration: 0.28 }}
             >
               <header
-                className="cart-banner"
+                className={`cart-banner${cartBanner ? ' has-image' : ''}`}
                 data-editor-field={cart.length ? 'cartBannerFilled' : 'cartBannerEmpty'}
+                style={cartBanner ? { aspectRatio: cartBannerRatio ?? 4 } : undefined}
               >
                 <h2 id="cart-title" className="sr-only">
                   Carrinho
@@ -1161,6 +1163,12 @@ export function Storefront() {
                     fill
                     sizes="(max-width: 600px) 100vw, 480px"
                     unoptimized={cartBanner.startsWith('/api/media')}
+                    onLoad={(event) => {
+                      const { naturalWidth, naturalHeight } = event.currentTarget;
+                      if (naturalWidth && naturalHeight) {
+                        setCartBannerRatio(naturalWidth / naturalHeight);
+                      }
+                    }}
                   />
                 )}
                 <button

@@ -3692,37 +3692,43 @@ footer .brand-logo {
 .cart-drawer > header.cart-banner {
   position: sticky;
   top: 0;
-  min-height: 172px;
+  min-height: 64px;
   padding: 0;
   overflow: hidden;
   border-bottom: 0;
   background: var(--paper);
   isolation: isolate;
 }
+.cart-drawer > header.cart-banner.has-image {
+  min-height: 0;
+}
 .cart-banner > img {
-  z-index: -1;
-  object-fit: cover;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: contain;
 }
 .cart-drawer > header.cart-banner .icon-button {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 4px;
+  right: 4px;
   width: 44px;
   min-width: 44px;
   height: 44px;
   min-height: 44px;
-  border-color: rgba(28, 25, 20, 0.14);
-  background: rgba(255, 255, 255, 0.72);
-  color: rgba(28, 25, 20, 0.78);
-  backdrop-filter: blur(6px);
+  border: 0;
+  background: transparent;
+  color: rgba(28, 25, 20, 0.82);
+  backdrop-filter: none;
+  filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.9));
 }
 .cart-drawer > header.cart-banner .icon-button svg {
-  width: 17px;
-  height: 17px;
+  width: 15px;
+  height: 15px;
 }
 .cart-drawer > header.cart-banner .icon-button:hover {
-  border-color: rgba(145, 65, 39, 0.36);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.38);
   color: var(--terracotta-dark);
 }
 .bump,
@@ -3880,8 +3886,8 @@ footer .brand-logo {
   .admin-cart-banners {
     grid-template-columns: 1fr;
   }
-  .cart-drawer > header.cart-banner {
-    min-height: 148px;
+  .cart-drawer > header.cart-banner:not(.has-image) {
+    min-height: 56px;
   }
 }
 
