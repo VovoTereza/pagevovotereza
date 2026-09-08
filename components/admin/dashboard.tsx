@@ -85,7 +85,8 @@ type EditorSection =
   | 'comments'
   | 'faq'
   | 'footer'
-  | 'cart';
+  | 'cart'
+  | 'recovery';
 type EditorField =
   | 'urgencyText'
   | 'navLabels'
@@ -133,7 +134,10 @@ type EditorField =
   | 'cartEmptyContent'
   | 'cartBumpCopy'
   | 'cartOfferCopy'
-  | 'cartSummaryCopy';
+  | 'cartSummaryCopy'
+  | 'recoveryStage1'
+  | 'recoveryStage2'
+  | 'recoveryStage3';
 
 const editorFieldLabels: Record<EditorField, string> = {
   urgencyText: 'Mensagem da oferta',
@@ -183,6 +187,9 @@ const editorFieldLabels: Record<EditorField, string> = {
   cartBumpCopy: 'Textos da oferta adicional',
   cartOfferCopy: 'Textos para completar a coleção',
   cartSummaryCopy: 'Resumo e botão de pagamento',
+  recoveryStage1: 'Primeiro popup de recuperação',
+  recoveryStage2: 'Segundo popup de recuperação',
+  recoveryStage3: 'Terceiro popup de recuperação',
 };
 
 const nav = [
@@ -244,7 +251,14 @@ export function AdminDashboard({
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>(
     'desktop',
   );
-  const [previewSurface, setPreviewSurface] = useState<'page' | 'cart-empty' | 'cart-filled'>('page');
+  const [previewSurface, setPreviewSurface] = useState<
+    | 'page'
+    | 'cart-empty'
+    | 'cart-filled'
+    | 'recovery-1'
+    | 'recovery-2'
+    | 'recovery-3'
+  >('page');
   const previewRef = useRef<HTMLIFrameElement>(null);
   const previewFrameRef = useRef<HTMLDivElement>(null);
   const [desktopPreviewScale, setDesktopPreviewScale] = useState(1);
@@ -303,11 +317,17 @@ export function AdminDashboard({
       cartBumpCopy: 'cart',
       cartOfferCopy: 'cart',
       cartSummaryCopy: 'cart',
+      recoveryStage1: 'recovery',
+      recoveryStage2: 'recovery',
+      recoveryStage3: 'recovery',
     };
     setSelectedEditorField(field);
     setEditorSection(sectionByField[field]);
     if (sectionByField[field] === 'cart') {
       setPreviewSurface(field === 'cartBannerEmpty' || field === 'cartEmptyContent' ? 'cart-empty' : 'cart-filled');
+    } else if (sectionByField[field] === 'recovery') {
+      const stage = field.slice(-1) as '1' | '2' | '3';
+      setPreviewSurface(`recovery-${stage}`);
     } else {
       setPreviewSurface('page');
     }
@@ -438,6 +458,24 @@ export function AdminDashboard({
       setConfig((current) => ({ ...current, [key]: result.url! }));
       setMessage('Imagem pronta. Salve a página para publicar a alteração.');
     }
+  }
+  async function replaceRecoveryBanner(index: number, file?: File) {
+    if (!file) return;
+    const offer = catalog.exitOffers[index];
+    if (!offer) return;
+    const result = await upload(
+      file,
+      'cover',
+      `recuperacao-etapa-${offer.stage}`,
+    );
+    if (!result?.url) return;
+    setCatalog((current) => ({
+      ...current,
+      exitOffers: current.exitOffers.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, banner: result.url! } : item,
+      ),
+    }));
+    setMessage('Banner pronto. Salve a página para publicar a alteração.');
   }
   async function addCustomerPhotos(files: FileList | null) {
     if (!files?.length) return;
@@ -1362,25 +1400,10 @@ export function AdminDashboard({
                     })
                   }
                   onBannerChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (!file) return;
-                    void (async () => {
-                      const result = await upload(
-                        file,
-                        'cover',
-                        `recuperacao-etapa-${offer.stage}`,
-                      );
-                      if (!result?.url) return;
-                      setCatalog((current) => ({
-                        ...current,
-                        exitOffers: current.exitOffers.map((item, i) =>
-                          i === index ? { ...item, banner: result.url! } : item,
-                        ),
-                      }));
-                      setMessage(
-                        'Banner enviado. Salve as etapas para publicar.',
-                      );
-                    })();
+                    void replaceRecoveryBanner(
+                      index,
+                      event.target.files?.[0],
+                    );
                   }}
                   onBannerRemove={() =>
                     setCatalog({
@@ -1650,6 +1673,7 @@ export function AdminDashboard({
                     ['faq', 'Dúvidas', MessageSquareQuote],
                     ['footer', 'Rodapé', FileText],
                     ['cart', 'Carrinho', ShoppingCart],
+                    ['recovery', 'Popups de recuperação', Megaphone],
                   ] as const
                 ).map(([id, label, Icon]) => (
                   <button
@@ -1716,6 +1740,11 @@ export function AdminDashboard({
                         ['cartOfferCopy', 'Oferta complementar'],
                         ['cartSummaryCopy', 'Resumo e pagamento'],
                       ],
+                      recovery: [
+                        ['recoveryStage1', 'Primeira fuga'],
+                        ['recoveryStage2', 'Segunda fuga'],
+                        ['recoveryStage3', 'Terceira fuga'],
+                      ],
                     }[editorSection] as [EditorField, string][]
                   ).map(([field, label]) => (
                     <button
@@ -1742,6 +1771,9 @@ export function AdminDashboard({
                       <option value="page">Página de vendas</option>
                       <option value="cart-empty">Carrinho vazio</option>
                       <option value="cart-filled">Carrinho com produtos</option>
+                      <option value="recovery-1">Popup — primeira fuga</option>
+                      <option value="recovery-2">Popup — segunda fuga</option>
+                      <option value="recovery-3">Popup — terceira fuga</option>
                     </select>
                     <button
                       type="button"
@@ -1777,7 +1809,13 @@ export function AdminDashboard({
                   <iframe
                     key={previewSurface}
                     ref={previewRef}
-                    src={previewSurface === 'page' ? '/?editorPreview=1' : `/?editorPreview=1&editorCart=${previewSurface === 'cart-empty' ? 'empty' : 'filled'}`}
+                    src={
+                      previewSurface === 'page'
+                        ? '/?editorPreview=1'
+                        : previewSurface.startsWith('recovery-')
+                          ? `/?editorPreview=1&editorExit=${previewSurface.slice(-1)}`
+                          : `/?editorPreview=1&editorCart=${previewSurface === 'cart-empty' ? 'empty' : 'filled'}`
+                    }
                     title="Prévia editável da página de vendas"
                     style={
                       previewDevice === 'desktop'
@@ -2398,6 +2436,56 @@ export function AdminDashboard({
                       {selectedEditorField === 'cartSummaryCopy' && <>{input('cartSubtotalLabel', 'Subtotal')}{input('cartSavingsLabel', 'Economia')}{input('cartSecurityText', 'Mensagem de segurança', true)}{input('cartCheckoutCtaText', 'Botão de pagamento')}{input('cartCheckoutLoadingText', 'Botão durante carregamento')}{input('paymentSecurityText', 'Texto de segurança do pagamento')}{input('paymentNote', 'Observação das formas de pagamento', true)}{input('cartRemoveText', 'Texto para remover item')}{input('cartBundleItemLabel', 'Descrição de bundle')}{input('cartProductItemLabel', 'Descrição de produto')}</>}
                     </div>
                   )}
+                  {editorSection === 'recovery' &&
+                    (() => {
+                      const stage = Number(selectedEditorField?.slice(-1));
+                      const index = stage - 1;
+                      const offer = catalog.exitOffers[index];
+                      if (!offer) return null;
+                      return (
+                        <div className="page-editor-fields">
+                          <header>
+                            <Megaphone />
+                            <div>
+                              <h3>{editorFieldLabels[selectedEditorField!]}</h3>
+                              <p>
+                                Envie o banner e edite os textos desta etapa.
+                              </p>
+                            </div>
+                          </header>
+                          <ExitOfferFields
+                            offer={offer}
+                            bundles={catalog.bundles}
+                            onChange={(next) =>
+                              setCatalog({
+                                ...catalog,
+                                exitOffers: catalog.exitOffers.map(
+                                  (item, itemIndex) =>
+                                    itemIndex === index ? next : item,
+                                ),
+                              })
+                            }
+                            onBannerChange={(event) =>
+                              void replaceRecoveryBanner(
+                                index,
+                                event.target.files?.[0],
+                              )
+                            }
+                            onBannerRemove={() =>
+                              setCatalog({
+                                ...catalog,
+                                exitOffers: catalog.exitOffers.map(
+                                  (item, itemIndex) =>
+                                    itemIndex === index
+                                      ? { ...item, banner: '' }
+                                      : item,
+                                ),
+                              })
+                            }
+                          />
+                        </div>
+                      );
+                    })()}
                 </section>
               )}
             </div>

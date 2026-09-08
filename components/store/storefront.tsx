@@ -167,7 +167,17 @@ export function Storefront() {
   }, []);
   useEffect(() => {
     if (!isEditorPreview) return;
-    const cartMode = new URLSearchParams(window.location.search).get('editorCart');
+    const params = new URLSearchParams(window.location.search);
+    const cartMode = params.get('editorCart');
+    const exitMode = Number(params.get('editorExit'));
+    if (exitMode >= 1 && exitMode <= exitOffers.length) {
+      queueMicrotask(() => {
+        setDrawerOpen(false);
+        setExitStage(exitMode);
+        setExitOpen(true);
+      });
+      return;
+    }
     if (!cartMode) return;
     const bundle = bundles[0];
     queueMicrotask(() => {
@@ -187,13 +197,16 @@ export function Storefront() {
         ]);
       }
     });
-  }, [bundles, isEditorPreview]);
+  }, [bundles, exitOffers.length, isEditorPreview]);
 
   useEffect(() => {
     if (!sessionStorage.getItem('vovo-session'))
       sessionStorage.setItem('vovo-session', crypto.randomUUID());
     const saved = localStorage.getItem('vovo-cart');
     const savedStage = Number(sessionStorage.getItem('vovo-exit-stage') || 0);
+    const previewStage = Number(
+      new URLSearchParams(window.location.search).get('editorExit'),
+    );
     queueMicrotask(() => {
       if (saved) {
         try {
@@ -202,7 +215,11 @@ export function Storefront() {
           localStorage.removeItem('vovo-cart');
         }
       }
-      setExitStage(savedStage);
+      setExitStage(
+        previewStage >= 1 && previewStage <= defaultCatalog.exitOffers.length
+          ? previewStage
+          : savedStage,
+      );
     });
     fetch('/api/site-config')
       .then((response) => (response.ok ? response.json() : null))
@@ -291,6 +308,7 @@ export function Storefront() {
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [drawerOpen]);
   useEffect(() => {
+    if (isEditorPreview) return;
     let engaged = false;
     const mark = () => {
       engaged = true;
@@ -317,7 +335,7 @@ export function Storefront() {
       window.removeEventListener('scroll', mark);
       document.removeEventListener('mouseout', exit);
     };
-  }, [exitStage, exitOpen, drawerOpen, exitOffers.length]);
+  }, [exitStage, exitOpen, drawerOpen, exitOffers.length, isEditorPreview]);
 
   const subtotal = useMemo(
     () => cart.reduce((sum, line) => sum + line.price * line.quantity, 0),
@@ -1417,6 +1435,7 @@ export function Storefront() {
             <motion.dialog
               open
               className="exit-modal"
+              data-editor-field={`recoveryStage${exitStage}`}
               aria-labelledby="exit-title"
               initial={reduceMotion ? {} : { opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
