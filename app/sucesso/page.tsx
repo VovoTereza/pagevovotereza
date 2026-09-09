@@ -1,4 +1,3 @@
-import { env } from '@/lib/server/runtime-env';
 import { CheckCircle2, Download, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { getStripe } from '@/lib/server/stripe';
@@ -9,7 +8,7 @@ type OrderItem = { id: string; productId: string | null; titleSnapshot: string }
 
 export default async function SuccessPage({ searchParams }: { searchParams: Promise<{ session_id?: string }> }) {
   const { session_id: sessionId } = await searchParams; let session = null;
-  try { if (sessionId && env.STRIPE_SECRET_KEY) session = await getStripe().checkout.sessions.retrieve(sessionId); } catch { session = null; }
+  try { if (sessionId) session = await (await getStripe()).checkout.sessions.retrieve(sessionId); } catch { session = null; }
   if (!sessionId || !session || session.payment_status !== 'paid') return <main className="status-page"><div className="status-card"><h1>Pagamento ainda não confirmado</h1><p>Se você acabou de pagar, aguarde alguns instantes e atualize esta página. O acesso só é liberado depois da confirmação segura da Stripe.</p><Link className="secondary-button" href="/">VOLTAR À LOJA</Link></div></main>;
   let order: Order | undefined; let items: OrderItem[] = [];
   try { const [row] = await selectRows<{id:string;order_number:string;download_token:string|null}>('orders',{stripe_checkout_session_id:`eq.${session.id}`,select:'id,order_number,download_token',limit:1}); if(row){order={id:row.id,orderNumber:row.order_number,downloadToken:row.download_token}; const rows=await selectRows<{id:string;product_id:string|null;title_snapshot:string}>('order_items',{order_id:`eq.${row.id}`,select:'id,product_id,title_snapshot'}); items=rows.map(item=>({id:item.id,productId:item.product_id,titleSnapshot:item.title_snapshot}));} } catch {}

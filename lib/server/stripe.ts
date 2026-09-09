@@ -1,7 +1,11 @@
 import Stripe from 'stripe';
-import { env } from '@/lib/server/runtime-env';
+import { resolveStripeCredentials } from '@/lib/server/stripe-config';
 
-export function getStripe() {
-  if (!env.STRIPE_SECRET_KEY) throw new Error('Stripe ainda não foi configurado. Defina STRIPE_SECRET_KEY no ambiente do servidor.');
-  return new Stripe(env.STRIPE_SECRET_KEY, { httpClient: Stripe.createFetchHttpClient() });
+export async function getStripe() {
+  const { credentials } = await resolveStripeCredentials();
+  if (!credentials?.secretKey)
+    throw new Error('Stripe ainda não foi configurada no painel administrativo.');
+  return new Stripe(credentials.secretKey, {
+    httpClient: Stripe.createFetchHttpClient(),
+  });
 }

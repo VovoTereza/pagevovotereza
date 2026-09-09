@@ -1,7 +1,7 @@
-import { env } from '@/lib/server/runtime-env';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getStripe } from '@/lib/server/stripe';
+import { resolveStripeCredentials } from '@/lib/server/stripe-config';
 import { getCatalogConfig } from '@/lib/server/catalog-config';
 import { insertRows, updateRows, upsertRows } from '@/lib/server/supabase';
 
@@ -92,7 +92,8 @@ async function completeCheckout(session: Stripe.Checkout.Session) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!env.STRIPE_WEBHOOK_SECRET)
+  const { credentials } = await resolveStripeCredentials();
+  if (!credentials?.webhookSecret)
     return NextResponse.json(
       { error: 'Webhook não configurado.' },
       { status: 503 },
@@ -102,10 +103,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Assinatura ausente.' }, { status: 400 });
   let event: Stripe.Event;
   try {
-    event = await getStripe().webhooks.constructEventAsync(
+    event = await (await getStripe()).webhooks.constructEventAsync(
       await request.text(),
       signature,
-      env.STRIPE_WEBHOOK_SECRET,
+      credentials.webhookSecret,
     );
   } catch {
     return NextResponse.json(

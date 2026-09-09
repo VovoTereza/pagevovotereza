@@ -70,6 +70,18 @@ type AdminOrder = {
   createdAt: string;
 };
 
+type StripeIntegrationStatus = {
+  configured: boolean;
+  secretKeyHint: string;
+  webhookConfigured: boolean;
+  webhookSecretHint: string;
+  mode: 'test' | 'live' | null;
+  accountId: string;
+  accountName: string;
+  source: 'panel' | 'environment' | null;
+  updatedAt: string;
+};
+
 type EditorSection =
   | 'offer'
   | 'navigation'
@@ -202,6 +214,7 @@ const nav = [
   ['Recuperação', Megaphone],
   ['Provas sociais', Users],
   ['Editor da página', FileText],
+  ["API's", KeyRound],
   ['SEO e palavras-chave', Search],
   ['Pixels', Settings],
 ] as const;
@@ -244,6 +257,12 @@ export function AdminDashboard({
   );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [stripeStatus, setStripeStatus] =
+    useState<StripeIntegrationStatus | null>(null);
+  const [stripeSecretKey, setStripeSecretKey] = useState('');
+  const [stripeWebhookSecret, setStripeWebhookSecret] = useState('');
+  const [stripeLoading, setStripeLoading] = useState(true);
+  const [stripeWebhookUrl, setStripeWebhookUrl] = useState('');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [editorSection, setEditorSection] = useState<EditorSection>('hero');
   const [selectedEditorField, setSelectedEditorField] =
@@ -376,6 +395,78 @@ export function AdminDashboard({
     observer.observe(previewFrameRef.current);
     return () => observer.disconnect();
   }, [active]);
+
+  useEffect(() => {
+    if (active !== "API's") return;
+    let cancelled = false;
+    fetch('/api/admin/integrations/stripe')
+      .then(async (response) => {
+        const data = (await response.json()) as {
+          status?: StripeIntegrationStatus;
+          webhookUrl?: string;
+          error?: string;
+        };
+        if (!response.ok) throw new Error(data.error || 'Falha ao carregar a Stripe.');
+        if (!cancelled) {
+          setStripeStatus(data.status || null);
+          setStripeWebhookUrl(data.webhookUrl || '');
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled)
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : 'Não foi possível carregar a Stripe.',
+          );
+      })
+      .finally(() => {
+        if (!cancelled) setStripeLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [active]);
+
+  async function saveStripeIntegration(
+    event: SyntheticEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+    if (!stripeSecretKey && !stripeStatus?.configured) {
+      setMessage('Informe a chave secreta da Stripe antes de salvar.');
+      return;
+    }
+    setStripeLoading(true);
+    setMessage('');
+    try {
+      const response = await fetch('/api/admin/integrations/stripe', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          secretKey: stripeSecretKey,
+          webhookSecret: stripeWebhookSecret,
+        }),
+      });
+      const data = (await response.json()) as {
+        status?: StripeIntegrationStatus;
+        webhookUrl?: string;
+        error?: string;
+      };
+      if (response.ok) {
+        setStripeStatus(data.status || null);
+        setStripeWebhookUrl(data.webhookUrl || stripeWebhookUrl);
+        setStripeSecretKey('');
+        setStripeWebhookSecret('');
+        setMessage('Configuração da Stripe salva e validada.');
+      } else {
+        setMessage(data.error || 'Não foi possível salvar a Stripe.');
+      }
+    } catch {
+      setMessage('Não foi possível se comunicar com o servidor. Tente novamente.');
+    } finally {
+      setStripeLoading(false);
+    }
+  }
 
   async function saveConfig(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -704,6 +795,7 @@ export function AdminDashboard({
                 onClick={() => {
                   setActive(name);
                   setMessage('');
+                  if (name === "API's") setStripeLoading(true);
                   setMobileNavOpen(false);
                 }}
               >
@@ -2489,6 +2581,125 @@ export function AdminDashboard({
                 </section>
               )}
             </div>
+            {notice}
+          </form>
+        )}
+
+        {active === "API's" && (
+          <form
+            className="admin-section admin-form api-integration-card"
+            onSubmit={saveStripeIntegration}
+          >
+            <div className="api-provider-heading">
+              <div className="api-provider-identity">
+                <span className="api-provider-logo">
+                  <Image
+                    src="/images/payments/stripe.svg"
+                    alt="Stripe"
+                    width={77}
+                    height={32}
+                  />
+                </span>
+                <div>
+                  <div className="api-provider-title-row">
+                    <h2>Stripe</h2>
+                    <span
+                      className={`api-status ${stripeStatus?.configured ? 'connected' : ''}`}
+                    >
+                      {stripeLoading && !stripeStatus
+                        ? 'Verificando'
+                        : stripeStatus?.configured
+                          ? 'Conectada'
+                          : 'Não configurada'}
+                    </span>
+                  </div>
+                  <p className="admin-muted">
+                    Processamento seguro dos pagamentos e confirmação automática
+                    dos pedidos.
+                  </p>
+                </div>
+              </div>
+              <button
+                className="save-button"
+                disabled={stripeLoading}
+                type="submit"
+              >
+                {stripeLoading ? <RefreshCw className="is-spinning" /> : <Save />}
+                {stripeLoading ? 'Validando...' : 'Salvar e validar'}
+              </button>
+            </div>
+
+            {stripeStatus?.configured && (
+              <output className="api-connection-summary">
+                <CheckCircle2 />
+                <div>
+                  <strong>
+                    {stripeStatus.accountName || 'Conta Stripe conectada'}
+                  </strong>
+                  <span>
+                    {stripeStatus.mode === 'live' ? 'Modo produção' : 'Modo teste'}
+                    {stripeStatus.accountId ? ` · ${stripeStatus.accountId}` : ''}
+                    {stripeStatus.source === 'environment'
+                      ? ' · configuração da Vercel'
+                      : ' · configuração do painel'}
+                  </span>
+                </div>
+              </output>
+            )}
+
+            <div className="api-credentials-grid">
+              <label>
+                Chave secreta
+                <input
+                  type="password"
+                  value={stripeSecretKey}
+                  onChange={(event) => setStripeSecretKey(event.target.value)}
+                  placeholder={stripeStatus?.secretKeyHint || 'sk_live_... ou sk_test_...'}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <small>
+                  {stripeStatus?.configured
+                    ? `Credencial atual: ${stripeStatus.secretKeyHint}. Deixe vazio para manter.`
+                    : 'Encontrada em Desenvolvedores → Chaves de API no painel da Stripe.'}
+                </small>
+              </label>
+              <label>
+                Segredo do webhook
+                <input
+                  type="password"
+                  value={stripeWebhookSecret}
+                  onChange={(event) =>
+                    setStripeWebhookSecret(event.target.value)
+                  }
+                  placeholder={
+                    stripeStatus?.webhookSecretHint || 'whsec_...'
+                  }
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <small>
+                  {stripeStatus?.webhookConfigured
+                    ? `Webhook atual: ${stripeStatus.webhookSecretHint}. Deixe vazio para manter.`
+                    : 'Necessário para confirmar pagamentos e liberar os produtos automaticamente.'}
+                </small>
+              </label>
+            </div>
+
+            <div className="api-webhook-box">
+              <div>
+                <strong>URL do webhook</strong>
+                <span>
+                  Cadastre esta URL na Stripe para os eventos de pagamento.
+                </span>
+              </div>
+              <code>{stripeWebhookUrl || '/api/stripe/webhook'}</code>
+            </div>
+
+            <p className="api-security-note">
+              <KeyRound /> As credenciais são criptografadas antes de serem
+              armazenadas e nunca são enviadas para a página de vendas.
+            </p>
             {notice}
           </form>
         )}

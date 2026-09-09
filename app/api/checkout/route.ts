@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       console.error('pending_order_write_failed', error);
     }
     const origin = env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
-    const stripe = getStripe();
+    const stripe = await getStripe();
     const session = await stripe.checkout.sessions.create(
       {
         mode: 'payment',
