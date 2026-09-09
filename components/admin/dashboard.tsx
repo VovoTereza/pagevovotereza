@@ -912,7 +912,7 @@ export function AdminDashboard({
               <p className="eyebrow">PAINEL ADMINISTRATIVO</p>
               <h1>{active}</h1>
             </div>
-            <a href="/" target="_blank">
+            <a href="/receitas" target="_blank">
               Ver loja
             </a>
           </header>
@@ -1825,7 +1825,7 @@ export function AdminDashboard({
                 </div>
               </div>
               <div className="page-editor-primary-actions">
-                <a href="/" target="_blank">
+                <a href="/receitas" target="_blank">
                   Ver loja
                 </a>
                 <button className="save-button" disabled={saving}>

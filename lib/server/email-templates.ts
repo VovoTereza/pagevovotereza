@@ -141,7 +141,7 @@ export function recoveryEmailTemplate(input: {
       <h1 style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-size:36px;line-height:1.08;font-weight:500;">Sua coleção ainda pode ficar mais completa, ${escapeHtml(firstName)}.</h1>
       <p style="margin:0 0 26px;color:${colors.muted};font-size:16px;line-height:1.65;">Você já começou a sua biblioteca. Separei os cadernos que ficaram de fora da última compra para que possa conhecê-los com calma.</p>
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0">${cards}</table>
-      <p style="margin:26px 0 0;text-align:center;">${button('VER TODOS OS CADERNOS', `${input.siteUrl}/#ofertas`)}</p>`,
+      <p style="margin:26px 0 0;text-align:center;">${button('VER TODOS OS CADERNOS', `${input.siteUrl}/receitas#ofertas`)}</p>`,
   });
   const text = [
     `Sua coleção ainda pode ficar mais completa, ${firstName}.`,

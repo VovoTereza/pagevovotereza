@@ -8,7 +8,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://vovotereza.com.br'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.receitasdavovotereza.site'),
   title: 'Vovó Tereza | Receitas naturais e autocuidado',
   description: 'Receitas tradicionais de autocuidado, babosa para os cabelos e chás organizados em cadernos digitais.',
   openGraph: { title: 'Vovó Tereza', description: 'Cadernos de receitas naturais e autocuidado, organizados com carinho.', type: 'website', locale: 'pt_BR' },

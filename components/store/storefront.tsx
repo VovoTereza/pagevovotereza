@@ -514,7 +514,7 @@ export function Storefront() {
       </div>
       <header className="site-header">
         <Link
-          href="/"
+          href="/receitas"
           className="brand"
           aria-label="Vovó Tereza, página inicial"
         >

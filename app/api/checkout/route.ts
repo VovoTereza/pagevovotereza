@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
           },
         })),
         success_url: `${origin}/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/?checkout=cancelado#ofertas`,
+        cancel_url: `${origin}/receitas?checkout=cancelado#ofertas`,
       },
       { idempotencyKey: request.headers.get('x-idempotency-key') || orderId },
     );

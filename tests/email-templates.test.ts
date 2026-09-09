@@ -42,4 +42,5 @@ test('template de recuperação apresenta apenas os produtos recebidos', () => {
   assert.match(result.html, /R\$\s19,90/);
   assert.doesNotMatch(result.html, /Guia de Ingredientes/);
   assert.match(result.text, /produto\/caderno-da-babosa/);
+  assert.match(result.html, /\/receitas#ofertas/);
 });
