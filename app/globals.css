@@ -5898,6 +5898,7 @@ footer .brand-logo {
   display: flex;
   flex: 0 0 auto;
   gap: 28px;
+  margin-inline: auto;
 }
 .comments-rail::-webkit-scrollbar {
   display: none;

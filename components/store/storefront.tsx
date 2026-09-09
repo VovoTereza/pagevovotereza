@@ -277,7 +277,7 @@ export function Storefront() {
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    if (reduceMotion) return;
+    if (reduceMotion || activeTestimonials.length <= 1) return;
     const timer = window.setInterval(() => {
       const rail = commentRailRef.current;
       if (
@@ -289,9 +289,10 @@ export function Storefront() {
         return;
       const firstCard = rail.querySelector<HTMLElement>('.comment-card');
       if (!firstCard) return;
-      const halfway = rail.scrollWidth / 2;
-      if (rail.scrollLeft >= halfway - firstCard.offsetWidth) {
-        rail.scrollTo({ left: 0, behavior: 'auto' });
+      const maximumScroll = rail.scrollWidth - rail.clientWidth;
+      if (maximumScroll <= 1) return;
+      if (rail.scrollLeft >= maximumScroll - 8) {
+        rail.scrollTo({ left: 0, behavior: 'smooth' });
         return;
       }
       rail.scrollBy({
@@ -794,36 +795,30 @@ export function Storefront() {
                   commentAutoPausedRef.current = false;
                 }}
               >
-                {[false, true].map((duplicate) => (
-                  <div
-                    className="comments-group"
-                    aria-hidden={duplicate || undefined}
-                    key={duplicate ? 'duplicate' : 'original'}
-                  >
-                    {activeTestimonials.map((item) => (
-                      <article className="comment-card" key={item.id}>
-                        <div className="comment-author">
-                          <strong>{item.name}</strong>
-                          {item.headline && <b>{item.headline}</b>}
-                          {item.city && <span>{item.city}</span>}
-                        </div>
-                        <div
-                          className="comment-rating"
-                          aria-label={`${item.rating} de 5 estrelas`}
-                        >
-                          {Array.from({ length: 5 }, (_, index) => (
-                            <Star
-                              key={index}
-                              aria-hidden="true"
-                              className={index < item.rating ? 'filled' : ''}
-                            />
-                          ))}
-                        </div>
-                        <p>{item.text}</p>
-                      </article>
-                    ))}
-                  </div>
-                ))}
+                <div className="comments-group">
+                  {activeTestimonials.map((item) => (
+                    <article className="comment-card" key={item.id}>
+                      <div className="comment-author">
+                        <strong>{item.name}</strong>
+                        {item.headline && <b>{item.headline}</b>}
+                        {item.city && <span>{item.city}</span>}
+                      </div>
+                      <div
+                        className="comment-rating"
+                        aria-label={`${item.rating} de 5 estrelas`}
+                      >
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <Star
+                            key={index}
+                            aria-hidden="true"
+                            className={index < item.rating ? 'filled' : ''}
+                          />
+                        ))}
+                      </div>
+                      <p>{item.text}</p>
+                    </article>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
@@ -881,32 +876,26 @@ export function Storefront() {
                       commentAutoPausedRef.current = false;
                     }}
                   >
-                    {[false, true].map((duplicate) => (
-                      <div
-                        className="comments-group"
-                        aria-hidden={duplicate || undefined}
-                        key={duplicate ? 'duplicate' : 'original'}
-                      >
-                        {Array.from({ length: 4 }, (_, index) => (
-                          <article
-                            className="comment-card comment-card-placeholder"
-                            key={index}
-                          >
-                            <MessageSquareQuote aria-hidden="true" />
-                            <strong>Espaço para comentário autorizado</strong>
-                            <div className="comment-rating" aria-hidden="true">
-                              {Array.from({ length: 5 }, (_, starIndex) => (
-                                <Star className="filled" key={starIndex} />
-                              ))}
-                            </div>
-                            <p>
-                              Cadastre um relato real no painel para substituir
-                              este espaço de edição.
-                            </p>
-                          </article>
-                        ))}
-                      </div>
-                    ))}
+                    <div className="comments-group">
+                      {Array.from({ length: 4 }, (_, index) => (
+                        <article
+                          className="comment-card comment-card-placeholder"
+                          key={index}
+                        >
+                          <MessageSquareQuote aria-hidden="true" />
+                          <strong>Espaço para comentário autorizado</strong>
+                          <div className="comment-rating" aria-hidden="true">
+                            {Array.from({ length: 5 }, (_, starIndex) => (
+                              <Star className="filled" key={starIndex} />
+                            ))}
+                          </div>
+                          <p>
+                            Cadastre um relato real no painel para substituir
+                            este espaço de edição.
+                          </p>
+                        </article>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
