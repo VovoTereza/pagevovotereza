@@ -2022,10 +2022,10 @@ export function AdminDashboard({
                     ref={previewRef}
                     src={
                       previewSurface === 'page'
-                        ? '/?editorPreview=1'
+                        ? '/receitas?editorPreview=1'
                         : previewSurface.startsWith('recovery-')
-                          ? `/?editorPreview=1&editorExit=${previewSurface.slice(-1)}`
-                          : `/?editorPreview=1&editorCart=${previewSurface === 'cart-empty' ? 'empty' : 'filled'}`
+                          ? `/receitas?editorPreview=1&editorExit=${previewSurface.slice(-1)}`
+                          : `/receitas?editorPreview=1&editorCart=${previewSurface === 'cart-empty' ? 'empty' : 'filled'}`
                     }
                     title="Prévia editável da página de vendas"
                     style={
