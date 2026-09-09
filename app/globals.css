@@ -5806,13 +5806,14 @@ footer .brand-logo {
 
 /* Reference-aligned comments carousel. */
 .comments-heading {
-  width: 100%;
-  max-width: 1200px;
+  width: 100vw;
+  max-width: none;
   justify-self: center;
   display: grid;
   place-items: center;
   gap: 13px;
   margin: 0 auto 42px;
+  padding-inline: clamp(20px, 5vw, 80px);
   text-align: center;
 }
 .comments-heading h2 {
