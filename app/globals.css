@@ -5432,6 +5432,9 @@ footer .brand-logo {
 
 /* Authorized customer comments between contents and benefits. */
 .customer-comments {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
   padding-top: clamp(72px, 8vw, 112px);
   padding-bottom: clamp(72px, 8vw, 112px);
   overflow: hidden;
@@ -5712,6 +5715,7 @@ footer .brand-logo {
 .comments-heading {
   width: 100%;
   max-width: 1200px;
+  justify-self: center;
   display: grid;
   place-items: center;
   gap: 13px;
