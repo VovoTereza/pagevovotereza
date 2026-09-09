@@ -5711,10 +5711,11 @@ footer .brand-logo {
 /* Reference-aligned comments carousel. */
 .comments-heading {
   width: 100%;
+  max-width: 1200px;
   display: grid;
   place-items: center;
   gap: 13px;
-  margin-bottom: 42px;
+  margin: 0 auto 42px;
   text-align: center;
 }
 .comments-heading h2 {
