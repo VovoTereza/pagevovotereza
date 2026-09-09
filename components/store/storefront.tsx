@@ -85,6 +85,13 @@ function track(name: string, data: Record<string, unknown> = {}) {
     );
 }
 
+function cartCoverLabel(productName: string) {
+  if (/babosa/i.test(productName)) return 'BABOSA';
+  if (/chá/i.test(productName)) return 'CHÁS';
+  if (/ingrediente/i.test(productName)) return 'GUIA';
+  return '150 RECEITAS';
+}
+
 const subscribeToEditorPreview = () => () => {};
 const getEditorPreviewSnapshot = () =>
   new URLSearchParams(window.location.search).get('editorPreview') === '1';
@@ -1290,7 +1297,12 @@ export function Storefront() {
                                       unoptimized
                                     />
                                   ) : (
-                                    <BookOpen aria-hidden="true" />
+                                    <>
+                                      <BookOpen aria-hidden="true" />
+                                      <small aria-hidden="true">
+                                        {cartCoverLabel(product.name)}
+                                      </small>
+                                    </>
                                   )}
                                 </span>
                               ))}
@@ -1318,6 +1330,15 @@ export function Storefront() {
                                   ` ${config.cartBundleItemLabel}`
                                 : config.cartProductItemLabel}
                             </small>
+                            {isBundle && (
+                              <span className="cart-line-product-names">
+                                {productsInLine
+                                  .map((product) =>
+                                    cartCoverLabel(product.name).toLowerCase(),
+                                  )
+                                  .join(' · ')}
+                              </span>
+                            )}
                             <button
                               onClick={() =>
                                 setCart((current) =>
