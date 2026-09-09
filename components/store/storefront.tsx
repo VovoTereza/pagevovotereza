@@ -747,7 +747,11 @@ export function Storefront() {
             </p>
           </div>
           {activeTestimonials.length ? (
-            <div className="comments-carousel">
+            <div
+              className={`comments-carousel${
+                activeTestimonials.length === 1 ? ' is-single' : ''
+              }`}
+            >
               {activeTestimonials.length > 1 && (
                 <div className="comments-controls">
                   <button

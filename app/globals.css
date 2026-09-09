@@ -5900,6 +5900,19 @@ footer .brand-logo {
   gap: 28px;
   margin-inline: auto;
 }
+.comments-carousel.is-single .comments-rail {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.comments-carousel.is-single .comments-group {
+  width: 100%;
+  justify-content: center;
+  margin: 0;
+}
+.comments-carousel.is-single .comment-card {
+  width: min(450px, 100%);
+}
 .comments-rail::-webkit-scrollbar {
   display: none;
 }
