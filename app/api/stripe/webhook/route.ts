@@ -4,6 +4,7 @@ import { getStripe } from '@/lib/server/stripe';
 import { resolveStripeCredentials } from '@/lib/server/stripe-config';
 import { getCatalogConfig } from '@/lib/server/catalog-config';
 import { insertRows, updateRows, upsertRows } from '@/lib/server/supabase';
+import { sendOrderEmails } from '@/lib/server/order-emails';
 
 type CartInput = {
   kind: 'bundle' | 'product';
@@ -12,7 +13,10 @@ type CartInput = {
   source?: 'order_bump' | 'cart_offer' | 'exit_offer';
 };
 
-async function completeCheckout(session: Stripe.Checkout.Session) {
+async function completeCheckout(
+  session: Stripe.Checkout.Session,
+  requestOrigin: string,
+) {
   const { products, bundles, orderBump, cartOffer } = await getCatalogConfig();
   const getBundle = (id: string) => bundles.find((item) => item.id === id);
   const getProduct = (id: string) => products.find((item) => item.id === id);
@@ -29,7 +33,9 @@ async function completeCheckout(session: Stripe.Checkout.Session) {
     session.customer_details?.email || session.customer_email || null;
   const name = session.customer_details?.name || null;
   const token = crypto.randomUUID();
-  await upsertRows('orders', {
+  await upsertRows(
+    'orders',
+    {
       id: orderId,
       order_number: orderNumber,
       customer_name: name,
@@ -49,7 +55,9 @@ async function completeCheckout(session: Stripe.Checkout.Session) {
       payment_status: 'paid',
       download_token: token,
       updated_at: new Date().toISOString(),
-    }, 'id');
+    },
+    'id',
+  );
   const rows: Record<string, unknown>[] = [];
   for (const item of cart) {
     if (item.kind === 'bundle') {
@@ -89,6 +97,18 @@ async function completeCheckout(session: Stripe.Checkout.Session) {
     }
   }
   if (rows.length) await insertRows('order_items', rows);
+  await sendOrderEmails({
+    customerEmail: email,
+    customerName: name,
+    orderId,
+    orderNumber,
+    downloadToken: token,
+    products,
+    purchasedProductIds: rows.flatMap((row) =>
+      typeof row.product_id === 'string' ? [row.product_id] : [],
+    ),
+    requestOrigin,
+  }).catch((error) => console.error('order_email_send_failed', error));
 }
 
 export async function POST(request: NextRequest) {
@@ -103,7 +123,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Assinatura ausente.' }, { status: 400 });
   let event: Stripe.Event;
   try {
-    event = await (await getStripe()).webhooks.constructEventAsync(
+    event = await (
+      await getStripe()
+    ).webhooks.constructEventAsync(
       await request.text(),
       signature,
       credentials.webhookSecret,
@@ -123,27 +145,35 @@ export async function POST(request: NextRequest) {
     event.type === 'checkout.session.completed' ||
     event.type === 'checkout.session.async_payment_succeeded'
   )
-    await completeCheckout(event.data.object);
+    await completeCheckout(event.data.object, request.nextUrl.origin);
   if (
     event.type === 'checkout.session.async_payment_failed' ||
     event.type === 'checkout.session.expired'
   )
-    await updateRows('orders', { stripe_checkout_session_id: `eq.${event.data.object.id}` }, {
+    await updateRows(
+      'orders',
+      { stripe_checkout_session_id: `eq.${event.data.object.id}` },
+      {
         status: event.type.endsWith('expired') ? 'expired' : 'payment_failed',
         payment_status: 'failed',
         updated_at: new Date().toISOString(),
-      });
+      },
+    );
   if (event.type === 'charge.refunded') {
     const intent =
       typeof event.data.object.payment_intent === 'string'
         ? event.data.object.payment_intent
         : '';
     if (intent)
-      await updateRows('orders', { stripe_payment_intent_id: `eq.${intent}` }, {
+      await updateRows(
+        'orders',
+        { stripe_payment_intent_id: `eq.${intent}` },
+        {
           status: 'refunded',
           payment_status: 'refunded',
           updated_at: new Date().toISOString(),
-        });
+        },
+      );
   }
   return NextResponse.json({ received: true });
 }

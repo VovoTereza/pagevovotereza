@@ -24,6 +24,7 @@ import {
   KeyRound,
   LogOut,
   Menu,
+  MailCheck,
   Megaphone,
   MessageSquareQuote,
   Monitor,
@@ -78,6 +79,16 @@ type StripeIntegrationStatus = {
   mode: 'test' | 'live' | null;
   accountId: string;
   accountName: string;
+  source: 'panel' | 'environment' | null;
+  updatedAt: string;
+};
+
+type ResendIntegrationStatus = {
+  configured: boolean;
+  apiKeyHint: string;
+  fromName: string;
+  fromEmail: string;
+  replyTo: string;
   source: 'panel' | 'environment' | null;
   updatedAt: string;
 };
@@ -263,6 +274,13 @@ export function AdminDashboard({
   const [stripeWebhookSecret, setStripeWebhookSecret] = useState('');
   const [stripeLoading, setStripeLoading] = useState(true);
   const [stripeWebhookUrl, setStripeWebhookUrl] = useState('');
+  const [resendStatus, setResendStatus] =
+    useState<ResendIntegrationStatus | null>(null);
+  const [resendApiKey, setResendApiKey] = useState('');
+  const [resendFromName, setResendFromName] = useState('Vovó Tereza');
+  const [resendFromEmail, setResendFromEmail] = useState('');
+  const [resendReplyTo, setResendReplyTo] = useState('');
+  const [resendLoading, setResendLoading] = useState(true);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [editorSection, setEditorSection] = useState<EditorSection>('hero');
   const [selectedEditorField, setSelectedEditorField] =
@@ -343,7 +361,11 @@ export function AdminDashboard({
     setSelectedEditorField(field);
     setEditorSection(sectionByField[field]);
     if (sectionByField[field] === 'cart') {
-      setPreviewSurface(field === 'cartBannerEmpty' || field === 'cartEmptyContent' ? 'cart-empty' : 'cart-filled');
+      setPreviewSurface(
+        field === 'cartBannerEmpty' || field === 'cartEmptyContent'
+          ? 'cart-empty'
+          : 'cart-filled',
+      );
     } else if (sectionByField[field] === 'recovery') {
       const stage = field.slice(-1) as '1' | '2' | '3';
       setPreviewSurface(`recovery-${stage}`);
@@ -364,8 +386,7 @@ export function AdminDashboard({
       if (event.origin !== window.location.origin) return;
       if (event.data?.type !== 'vovo-editor-select') return;
       const field = event.data.field as EditorField;
-      if (field in editorFieldLabels)
-        selectEditorField(field);
+      if (field in editorFieldLabels) selectEditorField(field);
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
@@ -399,38 +420,56 @@ export function AdminDashboard({
   useEffect(() => {
     if (active !== "API's") return;
     let cancelled = false;
-    fetch('/api/admin/integrations/stripe')
-      .then(async (response) => {
+    Promise.all([
+      fetch('/api/admin/integrations/stripe').then(async (response) => {
         const data = (await response.json()) as {
           status?: StripeIntegrationStatus;
           webhookUrl?: string;
           error?: string;
         };
-        if (!response.ok) throw new Error(data.error || 'Falha ao carregar a Stripe.');
+        if (!response.ok)
+          throw new Error(data.error || 'Falha ao carregar a Stripe.');
         if (!cancelled) {
           setStripeStatus(data.status || null);
           setStripeWebhookUrl(data.webhookUrl || '');
         }
-      })
+      }),
+      fetch('/api/admin/integrations/resend').then(async (response) => {
+        const data = (await response.json()) as {
+          status?: ResendIntegrationStatus;
+          error?: string;
+        };
+        if (!response.ok)
+          throw new Error(data.error || 'Falha ao carregar a Resend.');
+        if (!cancelled) {
+          const status = data.status || null;
+          setResendStatus(status);
+          setResendFromName(status?.fromName || 'Vovó Tereza');
+          setResendFromEmail(status?.fromEmail || '');
+          setResendReplyTo(status?.replyTo || '');
+        }
+      }),
+    ])
       .catch((error: unknown) => {
         if (!cancelled)
           setMessage(
             error instanceof Error
               ? error.message
-              : 'Não foi possível carregar a Stripe.',
+              : 'Não foi possível carregar as integrações.',
           );
       })
       .finally(() => {
-        if (!cancelled) setStripeLoading(false);
+        if (!cancelled) {
+          setStripeLoading(false);
+          setResendLoading(false);
+        }
       });
     return () => {
       cancelled = true;
     };
   }, [active]);
 
-  async function saveStripeIntegration(
-    event: SyntheticEvent<HTMLFormElement>,
-  ) {
+  async function saveStripeIntegration(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!stripeSecretKey && !stripeStatus?.configured) {
       setMessage('Informe a chave secreta da Stripe antes de salvar.');
@@ -462,9 +501,50 @@ export function AdminDashboard({
         setMessage(data.error || 'Não foi possível salvar a Stripe.');
       }
     } catch {
-      setMessage('Não foi possível se comunicar com o servidor. Tente novamente.');
+      setMessage(
+        'Não foi possível se comunicar com o servidor. Tente novamente.',
+      );
     } finally {
       setStripeLoading(false);
+    }
+  }
+
+  async function saveResendIntegration(event: SyntheticEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!resendApiKey && !resendStatus?.configured) {
+      setMessage('Informe a chave de API da Resend antes de salvar.');
+      return;
+    }
+    setResendLoading(true);
+    setMessage('');
+    try {
+      const response = await fetch('/api/admin/integrations/resend', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          apiKey: resendApiKey,
+          fromName: resendFromName,
+          fromEmail: resendFromEmail,
+          replyTo: resendReplyTo,
+        }),
+      });
+      const data = (await response.json()) as {
+        status?: ResendIntegrationStatus;
+        error?: string;
+      };
+      if (!response.ok)
+        throw new Error(data.error || 'Não foi possível salvar a Resend.');
+      setResendStatus(data.status || null);
+      setResendApiKey('');
+      setMessage('Configuração da Resend salva e validada.');
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível se comunicar com o servidor.',
+      );
+    } finally {
+      setResendLoading(false);
     }
   }
 
@@ -602,7 +682,9 @@ export function AdminDashboard({
     }
   }
   const input = (
-    key: { [K in keyof Config]: Config[K] extends string ? K : never }[keyof Config],
+    key: {
+      [K in keyof Config]: Config[K] extends string ? K : never;
+    }[keyof Config],
     label: string,
     area = false,
   ) => (
@@ -649,7 +731,12 @@ export function AdminDashboard({
     </div>
   );
   const cardList = (
-    key: 'painItems' | 'contentsItems' | 'benefitsItems' | 'cartBumpRecipes' | 'cartOfferRecipes',
+    key:
+      | 'painItems'
+      | 'contentsItems'
+      | 'benefitsItems'
+      | 'cartBumpRecipes'
+      | 'cartOfferRecipes',
   ) => (
     <div className="page-editor-card-fields">
       {config[key].map((item, index) => (
@@ -663,7 +750,9 @@ export function AdminDashboard({
                 setConfig({
                   ...config,
                   [key]: config[key].map((current, itemIndex) =>
-                    itemIndex === index ? { ...current, title: event.target.value } : current,
+                    itemIndex === index
+                      ? { ...current, title: event.target.value }
+                      : current,
                   ),
                 })
               }
@@ -677,7 +766,9 @@ export function AdminDashboard({
                 setConfig({
                   ...config,
                   [key]: config[key].map((current, itemIndex) =>
-                    itemIndex === index ? { ...current, text: event.target.value } : current,
+                    itemIndex === index
+                      ? { ...current, text: event.target.value }
+                      : current,
                   ),
                 })
               }
@@ -783,7 +874,9 @@ export function AdminDashboard({
               onClick={() => setMobileNavOpen((current) => !current)}
             >
               {mobileNavOpen ? <X /> : <Menu />}
-              <span className="sr-only">{mobileNavOpen ? 'Fechar menu' : 'Abrir menu'}</span>
+              <span className="sr-only">
+                {mobileNavOpen ? 'Fechar menu' : 'Abrir menu'}
+              </span>
             </button>
           </div>
           <nav id="admin-navigation">
@@ -1492,10 +1585,7 @@ export function AdminDashboard({
                     })
                   }
                   onBannerChange={(event) => {
-                    void replaceRecoveryBanner(
-                      index,
-                      event.target.files?.[0],
-                    );
+                    void replaceRecoveryBanner(index, event.target.files?.[0]);
                   }}
                   onBannerRemove={() =>
                     setCatalog({
@@ -1800,12 +1890,30 @@ export function AdminDashboard({
                         ['heroCard', 'Selo da imagem'],
                       ],
                       proof: [['proofItems', 'Itens da faixa']],
-                      pain: [['painHeading', 'Introdução'], ['painItems', 'Cards']],
-                      contents: [['contentsHeading', 'Introdução'], ['contentsItems', 'Cards']],
-                      benefits: [['benefitsHeading', 'Título'], ['benefitsItems', 'Lista']],
-                      story: [['founderImage', 'Foto da autora'], ['founderContent', 'Textos']],
-                      offers: [['collectionHeading', 'Introdução'], ['collectionBenefits', 'Benefícios']],
-                      gallery: [['galleryCopy', 'Título'], ['gallery', 'Galeria rolante']],
+                      pain: [
+                        ['painHeading', 'Introdução'],
+                        ['painItems', 'Cards'],
+                      ],
+                      contents: [
+                        ['contentsHeading', 'Introdução'],
+                        ['contentsItems', 'Cards'],
+                      ],
+                      benefits: [
+                        ['benefitsHeading', 'Título'],
+                        ['benefitsItems', 'Lista'],
+                      ],
+                      story: [
+                        ['founderImage', 'Foto da autora'],
+                        ['founderContent', 'Textos'],
+                      ],
+                      offers: [
+                        ['collectionHeading', 'Introdução'],
+                        ['collectionBenefits', 'Benefícios'],
+                      ],
+                      gallery: [
+                        ['galleryCopy', 'Título'],
+                        ['gallery', 'Galeria rolante'],
+                      ],
                       comparison: [
                         ['comparisonEyebrow', 'Selo'],
                         ['comparisonTitle', 'Título'],
@@ -1822,8 +1930,15 @@ export function AdminDashboard({
                         ['commentsEmpty', 'Estado vazio'],
                         ['commentsList', 'Relatos'],
                       ],
-                      faq: [['faqHeading', 'Título'], ['faqItems', 'Perguntas']],
-                      footer: [['footerText', 'Apresentação'], ['footerSocial', 'Redes sociais'], ['footerCopyright', 'Direitos autorais']],
+                      faq: [
+                        ['faqHeading', 'Título'],
+                        ['faqItems', 'Perguntas'],
+                      ],
+                      footer: [
+                        ['footerText', 'Apresentação'],
+                        ['footerSocial', 'Redes sociais'],
+                        ['footerCopyright', 'Direitos autorais'],
+                      ],
                       cart: [
                         ['cartBannerEmpty', 'Banner vazio'],
                         ['cartBannerFilled', 'Banner com produtos'],
@@ -1858,7 +1973,11 @@ export function AdminDashboard({
                     <select
                       aria-label="Conteúdo da prévia"
                       value={previewSurface}
-                      onChange={(event) => setPreviewSurface(event.target.value as typeof previewSurface)}
+                      onChange={(event) =>
+                        setPreviewSurface(
+                          event.target.value as typeof previewSurface,
+                        )
+                      }
                     >
                       <option value="page">Página de vendas</option>
                       <option value="cart-empty">Carrinho vazio</option>
@@ -1940,8 +2059,19 @@ export function AdminDashboard({
                 <section className="page-editor-inspector">
                   {editorSection === 'navigation' && (
                     <div className="page-editor-fields">
-                      <header><Columns3 /><div><h3>Menu principal</h3><p>Edite os nomes dos links de navegação.</p></div></header>
-                      {stringList('navLabels', ['Início', 'Segundo link', 'Terceiro link', 'Quarto link'])}
+                      <header>
+                        <Columns3 />
+                        <div>
+                          <h3>Menu principal</h3>
+                          <p>Edite os nomes dos links de navegação.</p>
+                        </div>
+                      </header>
+                      {stringList('navLabels', [
+                        'Início',
+                        'Segundo link',
+                        'Terceiro link',
+                        'Quarto link',
+                      ])}
                     </div>
                   )}
                   {editorSection === 'offer' && (
@@ -1994,43 +2124,97 @@ export function AdminDashboard({
                       {selectedEditorField === 'ctaText' &&
                         input('ctaText', 'Texto do botão')}
                       {selectedEditorField === 'heroBenefits' &&
-                        stringList('heroBenefits', ['Destaque 1', 'Destaque 2', 'Destaque 3', 'Destaque 4'])}
-                      {selectedEditorField === 'heroPrice' && <>
-                        {input('heroPriceLabel', 'Texto acima do preço')}
-                        {input('heroPriceSuffix', 'Texto ao lado do preço')}
-                      </>}
-                      {selectedEditorField === 'heroMicrocopy' && input('heroMicrocopy', 'Mensagem de segurança', true)}
-                      {selectedEditorField === 'heroCard' && <>
-                        {input('heroCardTitle', 'Título do selo')}
-                        {input('heroCardSubtitle', 'Texto do selo')}
-                      </>}
+                        stringList('heroBenefits', [
+                          'Destaque 1',
+                          'Destaque 2',
+                          'Destaque 3',
+                          'Destaque 4',
+                        ])}
+                      {selectedEditorField === 'heroPrice' && (
+                        <>
+                          {input('heroPriceLabel', 'Texto acima do preço')}
+                          {input('heroPriceSuffix', 'Texto ao lado do preço')}
+                        </>
+                      )}
+                      {selectedEditorField === 'heroMicrocopy' &&
+                        input('heroMicrocopy', 'Mensagem de segurança', true)}
+                      {selectedEditorField === 'heroCard' && (
+                        <>
+                          {input('heroCardTitle', 'Título do selo')}
+                          {input('heroCardSubtitle', 'Texto do selo')}
+                        </>
+                      )}
                     </div>
                   )}
                   {editorSection === 'proof' && (
                     <div className="page-editor-fields">
-                      <header><CheckCircle2 /><div><h3>Faixa de benefícios</h3><p>Itens exibidos na faixa rolante.</p></div></header>
+                      <header>
+                        <CheckCircle2 />
+                        <div>
+                          <h3>Faixa de benefícios</h3>
+                          <p>Itens exibidos na faixa rolante.</p>
+                        </div>
+                      </header>
                       {stringList('proofItems', ['Item 1', 'Item 2', 'Item 3'])}
                     </div>
                   )}
                   {editorSection === 'pain' && (
                     <div className="page-editor-fields">
-                      <header><MessageSquareQuote /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Conteúdo da seção de identificação.</p></div></header>
-                      {selectedEditorField === 'painHeading' && <>{input('painEyebrow', 'Selo')}{input('painTitle', 'Título', true)}{input('painDescription', 'Descrição', true)}</>}
-                      {selectedEditorField === 'painItems' && cardList('painItems')}
+                      <header>
+                        <MessageSquareQuote />
+                        <div>
+                          <h3>{editorFieldLabels[selectedEditorField]}</h3>
+                          <p>Conteúdo da seção de identificação.</p>
+                        </div>
+                      </header>
+                      {selectedEditorField === 'painHeading' && (
+                        <>
+                          {input('painEyebrow', 'Selo')}
+                          {input('painTitle', 'Título', true)}
+                          {input('painDescription', 'Descrição', true)}
+                        </>
+                      )}
+                      {selectedEditorField === 'painItems' &&
+                        cardList('painItems')}
                     </div>
                   )}
                   {editorSection === 'contents' && (
                     <div className="page-editor-fields">
-                      <header><BookOpen /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Conteúdo da apresentação dos cadernos.</p></div></header>
-                      {selectedEditorField === 'contentsHeading' && <>{input('contentsEyebrow', 'Selo')}{input('contentsTitle', 'Título', true)}{input('contentsDescription', 'Descrição', true)}</>}
-                      {selectedEditorField === 'contentsItems' && cardList('contentsItems')}
+                      <header>
+                        <BookOpen />
+                        <div>
+                          <h3>{editorFieldLabels[selectedEditorField]}</h3>
+                          <p>Conteúdo da apresentação dos cadernos.</p>
+                        </div>
+                      </header>
+                      {selectedEditorField === 'contentsHeading' && (
+                        <>
+                          {input('contentsEyebrow', 'Selo')}
+                          {input('contentsTitle', 'Título', true)}
+                          {input('contentsDescription', 'Descrição', true)}
+                        </>
+                      )}
+                      {selectedEditorField === 'contentsItems' &&
+                        cardList('contentsItems')}
                     </div>
                   )}
                   {editorSection === 'benefits' && (
                     <div className="page-editor-fields">
-                      <header><CheckCircle2 /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Benefícios apresentados na página.</p></div></header>
-                      {selectedEditorField === 'benefitsHeading' && <>{input('benefitsEyebrow', 'Selo')}{input('benefitsTitle', 'Título', true)}</>}
-                      {selectedEditorField === 'benefitsItems' && cardList('benefitsItems')}
+                      <header>
+                        <CheckCircle2 />
+                        <div>
+                          <h3>{editorFieldLabels[selectedEditorField]}</h3>
+                          <p>Benefícios apresentados na página.</p>
+                        </div>
+                      </header>
+                      {selectedEditorField === 'benefitsHeading' && (
+                        <>
+                          {input('benefitsEyebrow', 'Selo')}
+                          {input('benefitsTitle', 'Título', true)}
+                        </>
+                      )}
+                      {selectedEditorField === 'benefitsItems' &&
+                        cardList('benefitsItems')}
                     </div>
                   )}
                   {editorSection === 'story' && (
@@ -2048,26 +2232,60 @@ export function AdminDashboard({
                           value={config.founderImage}
                           aspect="portrait"
                           onChange={(event) =>
-                            void replacePageImage(event.target.files?.[0], 'founderImage')
+                            void replacePageImage(
+                              event.target.files?.[0],
+                              'founderImage',
+                            )
                           }
-                          onRemove={() => setConfig({ ...config, founderImage: '' })}
+                          onRemove={() =>
+                            setConfig({ ...config, founderImage: '' })
+                          }
                         />
                       )}
-                      {selectedEditorField === 'founderContent' && <>
-                        {input('founderEyebrow', 'Selo')}
-                        {input('founderTitle', 'Título', true)}
-                        {input('founderBodyOne', 'Primeiro parágrafo', true)}
-                        {input('founderBodyTwo', 'Segundo parágrafo', true)}
-                        {input('founderSignature', 'Assinatura')}
-                        {input('founderCtaText', 'Texto do botão')}
-                      </>}
+                      {selectedEditorField === 'founderContent' && (
+                        <>
+                          {input('founderEyebrow', 'Selo')}
+                          {input('founderTitle', 'Título', true)}
+                          {input('founderBodyOne', 'Primeiro parágrafo', true)}
+                          {input('founderBodyTwo', 'Segundo parágrafo', true)}
+                          {input('founderSignature', 'Assinatura')}
+                          {input('founderCtaText', 'Texto do botão')}
+                        </>
+                      )}
                     </div>
                   )}
                   {editorSection === 'offers' && (
                     <div className="page-editor-fields">
-                      <header><CircleDollarSign /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Textos gerais das ofertas; produtos e preços ficam nas áreas próprias.</p></div></header>
-                      {selectedEditorField === 'collectionHeading' && <>{input('collectionEyebrow', 'Selo')}{input('collectionTitle', 'Título', true)}{input('collectionSubtitle', 'Descrição', true)}{input('collectionCtaText', 'Texto do botão')}{input('paymentNote', 'Observação do pagamento', true)}</>}
-                      {selectedEditorField === 'collectionBenefits' && stringList('collectionBenefits', ['Benefício 1', 'Benefício 2', 'Benefício 3', 'Benefício 4'])}
+                      <header>
+                        <CircleDollarSign />
+                        <div>
+                          <h3>{editorFieldLabels[selectedEditorField]}</h3>
+                          <p>
+                            Textos gerais das ofertas; produtos e preços ficam
+                            nas áreas próprias.
+                          </p>
+                        </div>
+                      </header>
+                      {selectedEditorField === 'collectionHeading' && (
+                        <>
+                          {input('collectionEyebrow', 'Selo')}
+                          {input('collectionTitle', 'Título', true)}
+                          {input('collectionSubtitle', 'Descrição', true)}
+                          {input('collectionCtaText', 'Texto do botão')}
+                          {input(
+                            'paymentNote',
+                            'Observação do pagamento',
+                            true,
+                          )}
+                        </>
+                      )}
+                      {selectedEditorField === 'collectionBenefits' &&
+                        stringList('collectionBenefits', [
+                          'Benefício 1',
+                          'Benefício 2',
+                          'Benefício 3',
+                          'Benefício 4',
+                        ])}
                     </div>
                   )}
                   {editorSection === 'gallery' && (
@@ -2082,110 +2300,115 @@ export function AdminDashboard({
                           </p>
                         </div>
                       </header>
-                      {selectedEditorField === 'gallery' && <label className="admin-gallery-add">
-                        <ImagePlus />
-                        <span>Adicionar fotos</span>
-                        <small>
-                          Selecione uma ou várias imagens JPG, PNG, WebP ou
-                          AVIF.
-                        </small>
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp,image/avif"
-                          multiple
-                          onChange={(event) => {
-                            void addCustomerPhotos(event.target.files);
-                            event.target.value = '';
-                          }}
-                        />
-                      </label>}
-                      {selectedEditorField === 'galleryCopy' && <>
-                        {input('galleryEyebrow', 'Selo')}
-                        {input('galleryTitle', 'Título na página')}
-                        {input('cartGalleryTitle', 'Título no carrinho')}
-                      </>}
-                      {selectedEditorField === 'gallery' && (config.customerPhotos.length ? (
-                        <div className="admin-gallery-grid">
-                          {config.customerPhotos.map((photo, index) => (
-                            <article
-                              className="admin-gallery-card"
-                              key={photo.id}
-                            >
-                              <div className="admin-gallery-preview">
-                                <Image
-                                  src={photo.src}
-                                  alt={photo.alt}
-                                  fill
-                                  sizes="180px"
-                                  unoptimized
-                                />
-                                <span>
-                                  {String(index + 1).padStart(2, '0')}
-                                </span>
-                              </div>
-                              <label>
-                                Texto alternativo
-                                <input
-                                  value={photo.alt}
-                                  onChange={(event) =>
-                                    setConfig({
-                                      ...config,
-                                      customerPhotos: config.customerPhotos.map(
-                                        (item) =>
-                                          item.id === photo.id
-                                            ? {
-                                                ...item,
-                                                alt: event.target.value,
-                                              }
-                                            : item,
-                                      ),
-                                    })
-                                  }
-                                />
-                              </label>
-                              <div className="admin-gallery-actions">
+                      {selectedEditorField === 'gallery' && (
+                        <label className="admin-gallery-add">
+                          <ImagePlus />
+                          <span>Adicionar fotos</span>
+                          <small>
+                            Selecione uma ou várias imagens JPG, PNG, WebP ou
+                            AVIF.
+                          </small>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/avif"
+                            multiple
+                            onChange={(event) => {
+                              void addCustomerPhotos(event.target.files);
+                              event.target.value = '';
+                            }}
+                          />
+                        </label>
+                      )}
+                      {selectedEditorField === 'galleryCopy' && (
+                        <>
+                          {input('galleryEyebrow', 'Selo')}
+                          {input('galleryTitle', 'Título na página')}
+                          {input('cartGalleryTitle', 'Título no carrinho')}
+                        </>
+                      )}
+                      {selectedEditorField === 'gallery' &&
+                        (config.customerPhotos.length ? (
+                          <div className="admin-gallery-grid">
+                            {config.customerPhotos.map((photo, index) => (
+                              <article
+                                className="admin-gallery-card"
+                                key={photo.id}
+                              >
+                                <div className="admin-gallery-preview">
+                                  <Image
+                                    src={photo.src}
+                                    alt={photo.alt}
+                                    fill
+                                    sizes="180px"
+                                    unoptimized
+                                  />
+                                  <span>
+                                    {String(index + 1).padStart(2, '0')}
+                                  </span>
+                                </div>
                                 <label>
-                                  <Upload /> Trocar
+                                  Texto alternativo
                                   <input
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp,image/avif"
-                                    onChange={(event) => {
-                                      void replaceCustomerPhoto(
-                                        photo.id,
-                                        event.target.files?.[0],
-                                      );
-                                      event.target.value = '';
-                                    }}
+                                    value={photo.alt}
+                                    onChange={(event) =>
+                                      setConfig({
+                                        ...config,
+                                        customerPhotos:
+                                          config.customerPhotos.map((item) =>
+                                            item.id === photo.id
+                                              ? {
+                                                  ...item,
+                                                  alt: event.target.value,
+                                                }
+                                              : item,
+                                          ),
+                                      })
+                                    }
                                   />
                                 </label>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setConfig({
-                                      ...config,
-                                      customerPhotos:
-                                        config.customerPhotos.filter(
-                                          (item) => item.id !== photo.id,
-                                        ),
-                                    })
-                                  }
-                                >
-                                  <Trash2 /> Apagar
-                                </button>
-                              </div>
-                            </article>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="admin-gallery-empty">
-                          <Images />
-                          <strong>Nenhuma foto adicionada</strong>
-                          <span>
-                            Use somente imagens reais e autorizadas pelas
-                            clientes.
-                          </span>
-                        </div>
-                      ))}
+                                <div className="admin-gallery-actions">
+                                  <label>
+                                    <Upload /> Trocar
+                                    <input
+                                      type="file"
+                                      accept="image/jpeg,image/png,image/webp,image/avif"
+                                      onChange={(event) => {
+                                        void replaceCustomerPhoto(
+                                          photo.id,
+                                          event.target.files?.[0],
+                                        );
+                                        event.target.value = '';
+                                      }}
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setConfig({
+                                        ...config,
+                                        customerPhotos:
+                                          config.customerPhotos.filter(
+                                            (item) => item.id !== photo.id,
+                                          ),
+                                      })
+                                    }
+                                  >
+                                    <Trash2 /> Apagar
+                                  </button>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="admin-gallery-empty">
+                            <Images />
+                            <strong>Nenhuma foto adicionada</strong>
+                            <span>
+                              Use somente imagens reais e autorizadas pelas
+                              clientes.
+                            </span>
+                          </div>
+                        ))}
                     </div>
                   )}
                   {editorSection === 'comparison' && (
@@ -2304,10 +2527,19 @@ export function AdminDashboard({
                         input('commentsTitle', 'Título dos comentários', true)}
                       {selectedEditorField === 'commentsSubtitle' &&
                         input('commentsSubtitle', 'Texto de apoio', true)}
-                      {selectedEditorField === 'commentsEmpty' && <>
-                        {input('commentsEmptyTitle', 'Título do estado vazio')}
-                        {input('commentsEmptyText', 'Texto do estado vazio', true)}
-                      </>}
+                      {selectedEditorField === 'commentsEmpty' && (
+                        <>
+                          {input(
+                            'commentsEmptyTitle',
+                            'Título do estado vazio',
+                          )}
+                          {input(
+                            'commentsEmptyText',
+                            'Texto do estado vazio',
+                            true,
+                          )}
+                        </>
+                      )}
                       {selectedEditorField === 'commentsList' && (
                         <div className="comments-admin-editor">
                           <button
@@ -2478,15 +2710,64 @@ export function AdminDashboard({
                   )}
                   {editorSection === 'faq' && (
                     <div className="page-editor-fields">
-                      <header><MessageSquareQuote /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Edite o título ou cada pergunta exibida.</p></div></header>
-                      {selectedEditorField === 'faqHeading' && <>{input('faqEyebrow', 'Selo')}{input('faqTitle', 'Título', true)}</>}
+                      <header>
+                        <MessageSquareQuote />
+                        <div>
+                          <h3>{editorFieldLabels[selectedEditorField]}</h3>
+                          <p>Edite o título ou cada pergunta exibida.</p>
+                        </div>
+                      </header>
+                      {selectedEditorField === 'faqHeading' && (
+                        <>
+                          {input('faqEyebrow', 'Selo')}
+                          {input('faqTitle', 'Título', true)}
+                        </>
+                      )}
                       {selectedEditorField === 'faqItems' && (
                         <div className="page-editor-card-fields">
                           {config.faqItems.map((item, index) => (
                             <fieldset key={`faq-${index}`}>
                               <legend>Pergunta {index + 1}</legend>
-                              <label>Pergunta<input value={item.question} onChange={(event) => setConfig({...config, faqItems: config.faqItems.map((current, itemIndex) => itemIndex === index ? {...current, question: event.target.value} : current)})} /></label>
-                              <label>Resposta<textarea value={item.answer} onChange={(event) => setConfig({...config, faqItems: config.faqItems.map((current, itemIndex) => itemIndex === index ? {...current, answer: event.target.value} : current)})} /></label>
+                              <label>
+                                Pergunta
+                                <input
+                                  value={item.question}
+                                  onChange={(event) =>
+                                    setConfig({
+                                      ...config,
+                                      faqItems: config.faqItems.map(
+                                        (current, itemIndex) =>
+                                          itemIndex === index
+                                            ? {
+                                                ...current,
+                                                question: event.target.value,
+                                              }
+                                            : current,
+                                      ),
+                                    })
+                                  }
+                                />
+                              </label>
+                              <label>
+                                Resposta
+                                <textarea
+                                  value={item.answer}
+                                  onChange={(event) =>
+                                    setConfig({
+                                      ...config,
+                                      faqItems: config.faqItems.map(
+                                        (current, itemIndex) =>
+                                          itemIndex === index
+                                            ? {
+                                                ...current,
+                                                answer: event.target.value,
+                                              }
+                                            : current,
+                                      ),
+                                    })
+                                  }
+                                />
+                              </label>
                             </fieldset>
                           ))}
                         </div>
@@ -2495,37 +2776,186 @@ export function AdminDashboard({
                   )}
                   {editorSection === 'footer' && (
                     <div className="page-editor-fields">
-                      <header><FileText /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Conteúdo final da página.</p></div></header>
-                      {selectedEditorField === 'footerText' && input('footerText', 'Texto do rodapé', true)}
-                      {selectedEditorField === 'footerSocial' && <>{input('facebookUrl', 'Facebook')}{input('instagramUrl', 'Instagram')}{input('tiktokUrl', 'TikTok')}{input('youtubeUrl', 'YouTube')}</>}
-                      {selectedEditorField === 'footerCopyright' && input('footerCopyright', 'Direitos autorais')}
+                      <header>
+                        <FileText />
+                        <div>
+                          <h3>{editorFieldLabels[selectedEditorField]}</h3>
+                          <p>Conteúdo final da página.</p>
+                        </div>
+                      </header>
+                      {selectedEditorField === 'footerText' &&
+                        input('footerText', 'Texto do rodapé', true)}
+                      {selectedEditorField === 'footerSocial' && (
+                        <>
+                          {input('facebookUrl', 'Facebook')}
+                          {input('instagramUrl', 'Instagram')}
+                          {input('tiktokUrl', 'TikTok')}
+                          {input('youtubeUrl', 'YouTube')}
+                        </>
+                      )}
+                      {selectedEditorField === 'footerCopyright' &&
+                        input('footerCopyright', 'Direitos autorais')}
                     </div>
                   )}
                   {editorSection === 'cart' && (
                     <div className="page-editor-fields">
-                      <header><ShoppingCart /><div><h3>{editorFieldLabels[selectedEditorField]}</h3><p>Alterações aparecem no estado correspondente do carrinho.</p></div></header>
+                      <header>
+                        <ShoppingCart />
+                        <div>
+                          <h3>{editorFieldLabels[selectedEditorField]}</h3>
+                          <p>
+                            Alterações aparecem no estado correspondente do
+                            carrinho.
+                          </p>
+                        </div>
+                      </header>
                       {selectedEditorField === 'cartBannerEmpty' && (
-                        <AdminImageField label="Banner do carrinho vazio" value={config.cartBannerEmpty} aspect="wide" onChange={(event) => void replacePageImage(event.target.files?.[0], 'cartBannerEmpty')} onRemove={() => setConfig({...config, cartBannerEmpty: ''})} />
+                        <AdminImageField
+                          label="Banner do carrinho vazio"
+                          value={config.cartBannerEmpty}
+                          aspect="wide"
+                          onChange={(event) =>
+                            void replacePageImage(
+                              event.target.files?.[0],
+                              'cartBannerEmpty',
+                            )
+                          }
+                          onRemove={() =>
+                            setConfig({ ...config, cartBannerEmpty: '' })
+                          }
+                        />
                       )}
                       {selectedEditorField === 'cartBannerFilled' && (
-                        <AdminImageField label="Banner do carrinho com produtos" value={config.cartBannerFilled} aspect="wide" onChange={(event) => void replacePageImage(event.target.files?.[0], 'cartBannerFilled')} onRemove={() => setConfig({...config, cartBannerFilled: ''})} />
+                        <AdminImageField
+                          label="Banner do carrinho com produtos"
+                          value={config.cartBannerFilled}
+                          aspect="wide"
+                          onChange={(event) =>
+                            void replacePageImage(
+                              event.target.files?.[0],
+                              'cartBannerFilled',
+                            )
+                          }
+                          onRemove={() =>
+                            setConfig({ ...config, cartBannerFilled: '' })
+                          }
+                        />
                       )}
-                      {selectedEditorField === 'cartEmptyContent' && <>{input('cartEmptyTitle', 'Título')}{input('cartEmptyText', 'Descrição', true)}{input('cartEmptyCtaText', 'Texto do botão')}{input('cartEmptyNote', 'Observação', true)}</>}
-                      {selectedEditorField === 'cartBumpCopy' && <>
-                        {input('cartBumpEyebrow', 'Selo')}
-                        <label>Título<input value={catalog.orderBump.headline} onChange={(event) => setCatalog({...catalog, orderBump: {...catalog.orderBump, headline: event.target.value}})} /></label>
-                        <label>Descrição<textarea value={catalog.orderBump.description} onChange={(event) => setCatalog({...catalog, orderBump: {...catalog.orderBump, description: event.target.value}})} /></label>
-                        {input('cartBumpRecipeLabel', 'Selo da receita')}{input('cartAddCtaPrefix', 'Prefixo do botão')}
-                        {cardList('cartBumpRecipes')}
-                      </>}
-                      {selectedEditorField === 'cartOfferCopy' && <>
-                        {input('cartOfferEyebrow', 'Selo')}
-                        <label>Título<input value={catalog.cartOffer.headline} onChange={(event) => setCatalog({...catalog, cartOffer: {...catalog.cartOffer, headline: event.target.value}})} /></label>
-                        <label>Descrição<textarea value={catalog.cartOffer.description} onChange={(event) => setCatalog({...catalog, cartOffer: {...catalog.cartOffer, description: event.target.value}})} /></label>
-                        {input('cartOfferRecipeLabel', 'Selo da receita')}{input('cartAddCtaPrefix', 'Prefixo do botão')}
-                        {cardList('cartOfferRecipes')}
-                      </>}
-                      {selectedEditorField === 'cartSummaryCopy' && <>{input('cartSubtotalLabel', 'Subtotal')}{input('cartSavingsLabel', 'Economia')}{input('cartSecurityText', 'Mensagem de segurança', true)}{input('cartCheckoutCtaText', 'Botão de pagamento')}{input('cartCheckoutLoadingText', 'Botão durante carregamento')}{input('paymentSecurityText', 'Texto de segurança do pagamento')}{input('paymentNote', 'Observação das formas de pagamento', true)}{input('cartRemoveText', 'Texto para remover item')}{input('cartBundleItemLabel', 'Descrição de bundle')}{input('cartProductItemLabel', 'Descrição de produto')}</>}
+                      {selectedEditorField === 'cartEmptyContent' && (
+                        <>
+                          {input('cartEmptyTitle', 'Título')}
+                          {input('cartEmptyText', 'Descrição', true)}
+                          {input('cartEmptyCtaText', 'Texto do botão')}
+                          {input('cartEmptyNote', 'Observação', true)}
+                        </>
+                      )}
+                      {selectedEditorField === 'cartBumpCopy' && (
+                        <>
+                          {input('cartBumpEyebrow', 'Selo')}
+                          <label>
+                            Título
+                            <input
+                              value={catalog.orderBump.headline}
+                              onChange={(event) =>
+                                setCatalog({
+                                  ...catalog,
+                                  orderBump: {
+                                    ...catalog.orderBump,
+                                    headline: event.target.value,
+                                  },
+                                })
+                              }
+                            />
+                          </label>
+                          <label>
+                            Descrição
+                            <textarea
+                              value={catalog.orderBump.description}
+                              onChange={(event) =>
+                                setCatalog({
+                                  ...catalog,
+                                  orderBump: {
+                                    ...catalog.orderBump,
+                                    description: event.target.value,
+                                  },
+                                })
+                              }
+                            />
+                          </label>
+                          {input('cartBumpRecipeLabel', 'Selo da receita')}
+                          {input('cartAddCtaPrefix', 'Prefixo do botão')}
+                          {cardList('cartBumpRecipes')}
+                        </>
+                      )}
+                      {selectedEditorField === 'cartOfferCopy' && (
+                        <>
+                          {input('cartOfferEyebrow', 'Selo')}
+                          <label>
+                            Título
+                            <input
+                              value={catalog.cartOffer.headline}
+                              onChange={(event) =>
+                                setCatalog({
+                                  ...catalog,
+                                  cartOffer: {
+                                    ...catalog.cartOffer,
+                                    headline: event.target.value,
+                                  },
+                                })
+                              }
+                            />
+                          </label>
+                          <label>
+                            Descrição
+                            <textarea
+                              value={catalog.cartOffer.description}
+                              onChange={(event) =>
+                                setCatalog({
+                                  ...catalog,
+                                  cartOffer: {
+                                    ...catalog.cartOffer,
+                                    description: event.target.value,
+                                  },
+                                })
+                              }
+                            />
+                          </label>
+                          {input('cartOfferRecipeLabel', 'Selo da receita')}
+                          {input('cartAddCtaPrefix', 'Prefixo do botão')}
+                          {cardList('cartOfferRecipes')}
+                        </>
+                      )}
+                      {selectedEditorField === 'cartSummaryCopy' && (
+                        <>
+                          {input('cartSubtotalLabel', 'Subtotal')}
+                          {input('cartSavingsLabel', 'Economia')}
+                          {input(
+                            'cartSecurityText',
+                            'Mensagem de segurança',
+                            true,
+                          )}
+                          {input('cartCheckoutCtaText', 'Botão de pagamento')}
+                          {input(
+                            'cartCheckoutLoadingText',
+                            'Botão durante carregamento',
+                          )}
+                          {input(
+                            'paymentSecurityText',
+                            'Texto de segurança do pagamento',
+                          )}
+                          {input(
+                            'paymentNote',
+                            'Observação das formas de pagamento',
+                            true,
+                          )}
+                          {input('cartRemoveText', 'Texto para remover item')}
+                          {input('cartBundleItemLabel', 'Descrição de bundle')}
+                          {input(
+                            'cartProductItemLabel',
+                            'Descrição de produto',
+                          )}
+                        </>
+                      )}
                     </div>
                   )}
                   {editorSection === 'recovery' &&
@@ -2586,122 +3016,306 @@ export function AdminDashboard({
         )}
 
         {active === "API's" && (
-          <form
-            className="admin-section admin-form api-integration-card"
-            onSubmit={saveStripeIntegration}
-          >
-            <div className="api-provider-heading">
-              <div className="api-provider-identity">
-                <span className="api-provider-logo">
-                  <Image
-                    src="/images/payments/stripe.svg"
-                    alt="Stripe"
-                    width={77}
-                    height={32}
-                  />
-                </span>
-                <div>
-                  <div className="api-provider-title-row">
-                    <h2>Stripe</h2>
-                    <span
-                      className={`api-status ${stripeStatus?.configured ? 'connected' : ''}`}
-                    >
-                      {stripeLoading && !stripeStatus
-                        ? 'Verificando'
-                        : stripeStatus?.configured
-                          ? 'Conectada'
-                          : 'Não configurada'}
+          <div className="api-integrations-stack">
+            <form
+              className="admin-section admin-form api-integration-card"
+              onSubmit={saveStripeIntegration}
+            >
+              <div className="api-provider-heading">
+                <div className="api-provider-identity">
+                  <span className="api-provider-logo">
+                    <Image
+                      src="/images/payments/stripe.svg"
+                      alt="Stripe"
+                      width={77}
+                      height={32}
+                    />
+                  </span>
+                  <div>
+                    <div className="api-provider-title-row">
+                      <h2>Stripe</h2>
+                      <span
+                        className={`api-status ${stripeStatus?.configured ? 'connected' : ''}`}
+                      >
+                        {stripeLoading && !stripeStatus
+                          ? 'Verificando'
+                          : stripeStatus?.configured
+                            ? 'Conectada'
+                            : 'Não configurada'}
+                      </span>
+                    </div>
+                    <p className="admin-muted">
+                      Processamento seguro dos pagamentos e confirmação
+                      automática dos pedidos.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className="save-button"
+                  disabled={stripeLoading}
+                  type="submit"
+                >
+                  {stripeLoading ? (
+                    <RefreshCw className="is-spinning" />
+                  ) : (
+                    <Save />
+                  )}
+                  {stripeLoading ? 'Validando...' : 'Salvar e validar'}
+                </button>
+              </div>
+
+              {stripeStatus?.configured && (
+                <output className="api-connection-summary">
+                  <CheckCircle2 />
+                  <div>
+                    <strong>
+                      {stripeStatus.accountName || 'Conta Stripe conectada'}
+                    </strong>
+                    <span>
+                      {stripeStatus.mode === 'live'
+                        ? 'Modo produção'
+                        : 'Modo teste'}
+                      {stripeStatus.accountId
+                        ? ` · ${stripeStatus.accountId}`
+                        : ''}
+                      {stripeStatus.source === 'environment'
+                        ? ' · configuração da Vercel'
+                        : ' · configuração do painel'}
                     </span>
                   </div>
-                  <p className="admin-muted">
-                    Processamento seguro dos pagamentos e confirmação automática
-                    dos pedidos.
-                  </p>
-                </div>
-              </div>
-              <button
-                className="save-button"
-                disabled={stripeLoading}
-                type="submit"
-              >
-                {stripeLoading ? <RefreshCw className="is-spinning" /> : <Save />}
-                {stripeLoading ? 'Validando...' : 'Salvar e validar'}
-              </button>
-            </div>
+                </output>
+              )}
 
-            {stripeStatus?.configured && (
-              <output className="api-connection-summary">
-                <CheckCircle2 />
+              <div className="api-credentials-grid">
+                <label>
+                  Chave secreta
+                  <input
+                    type="password"
+                    value={stripeSecretKey}
+                    onChange={(event) => setStripeSecretKey(event.target.value)}
+                    placeholder={
+                      stripeStatus?.secretKeyHint ||
+                      'sk_live_... ou sk_test_...'
+                    }
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <small>
+                    {stripeStatus?.configured
+                      ? `Credencial atual: ${stripeStatus.secretKeyHint}. Deixe vazio para manter.`
+                      : 'Encontrada em Desenvolvedores → Chaves de API no painel da Stripe.'}
+                  </small>
+                </label>
+                <label>
+                  Segredo do webhook
+                  <input
+                    type="password"
+                    value={stripeWebhookSecret}
+                    onChange={(event) =>
+                      setStripeWebhookSecret(event.target.value)
+                    }
+                    placeholder={stripeStatus?.webhookSecretHint || 'whsec_...'}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <small>
+                    {stripeStatus?.webhookConfigured
+                      ? `Webhook atual: ${stripeStatus.webhookSecretHint}. Deixe vazio para manter.`
+                      : 'Necessário para confirmar pagamentos e liberar os produtos automaticamente.'}
+                  </small>
+                </label>
+              </div>
+
+              <div className="api-webhook-box">
                 <div>
-                  <strong>
-                    {stripeStatus.accountName || 'Conta Stripe conectada'}
-                  </strong>
+                  <strong>URL do webhook</strong>
                   <span>
-                    {stripeStatus.mode === 'live' ? 'Modo produção' : 'Modo teste'}
-                    {stripeStatus.accountId ? ` · ${stripeStatus.accountId}` : ''}
-                    {stripeStatus.source === 'environment'
-                      ? ' · configuração da Vercel'
-                      : ' · configuração do painel'}
+                    Cadastre esta URL na Stripe para os eventos de pagamento.
                   </span>
                 </div>
-              </output>
-            )}
-
-            <div className="api-credentials-grid">
-              <label>
-                Chave secreta
-                <input
-                  type="password"
-                  value={stripeSecretKey}
-                  onChange={(event) => setStripeSecretKey(event.target.value)}
-                  placeholder={stripeStatus?.secretKeyHint || 'sk_live_... ou sk_test_...'}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-                <small>
-                  {stripeStatus?.configured
-                    ? `Credencial atual: ${stripeStatus.secretKeyHint}. Deixe vazio para manter.`
-                    : 'Encontrada em Desenvolvedores → Chaves de API no painel da Stripe.'}
-                </small>
-              </label>
-              <label>
-                Segredo do webhook
-                <input
-                  type="password"
-                  value={stripeWebhookSecret}
-                  onChange={(event) =>
-                    setStripeWebhookSecret(event.target.value)
-                  }
-                  placeholder={
-                    stripeStatus?.webhookSecretHint || 'whsec_...'
-                  }
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-                <small>
-                  {stripeStatus?.webhookConfigured
-                    ? `Webhook atual: ${stripeStatus.webhookSecretHint}. Deixe vazio para manter.`
-                    : 'Necessário para confirmar pagamentos e liberar os produtos automaticamente.'}
-                </small>
-              </label>
-            </div>
-
-            <div className="api-webhook-box">
-              <div>
-                <strong>URL do webhook</strong>
-                <span>
-                  Cadastre esta URL na Stripe para os eventos de pagamento.
-                </span>
+                <code>{stripeWebhookUrl || '/api/stripe/webhook'}</code>
               </div>
-              <code>{stripeWebhookUrl || '/api/stripe/webhook'}</code>
-            </div>
 
-            <p className="api-security-note">
-              <KeyRound /> As credenciais são criptografadas antes de serem
-              armazenadas e nunca são enviadas para a página de vendas.
-            </p>
-            {notice}
-          </form>
+              <p className="api-security-note">
+                <KeyRound /> As credenciais são criptografadas antes de serem
+                armazenadas e nunca são enviadas para a página de vendas.
+              </p>
+              {notice}
+            </form>
+
+            <form
+              className="admin-section admin-form api-integration-card"
+              onSubmit={saveResendIntegration}
+            >
+              <div className="api-provider-heading">
+                <div className="api-provider-identity">
+                  <span className="api-provider-logo resend-provider-logo">
+                    <MailCheck aria-hidden="true" />
+                  </span>
+                  <div>
+                    <div className="api-provider-title-row">
+                      <h2>Resend</h2>
+                      <span
+                        className={`api-status ${resendStatus?.configured ? 'connected' : ''}`}
+                      >
+                        {resendLoading && !resendStatus
+                          ? 'Verificando'
+                          : resendStatus?.configured
+                            ? 'Conectada'
+                            : 'Não configurada'}
+                      </span>
+                    </div>
+                    <p className="admin-muted">
+                      Entrega automática dos arquivos e recuperação da coleção
+                      três dias após a compra.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className="save-button"
+                  disabled={resendLoading}
+                  type="submit"
+                >
+                  {resendLoading ? (
+                    <RefreshCw className="is-spinning" />
+                  ) : (
+                    <Save />
+                  )}
+                  {resendLoading ? 'Validando...' : 'Salvar e validar'}
+                </button>
+              </div>
+
+              {resendStatus?.configured && (
+                <output className="api-connection-summary">
+                  <CheckCircle2 aria-hidden="true" />
+                  <div>
+                    <strong>Envio automático configurado</strong>
+                    <span>
+                      {resendStatus.fromName} &lt;{resendStatus.fromEmail}&gt;
+                      {resendStatus.source === 'environment'
+                        ? ' · configuração da Vercel'
+                        : ' · configuração do painel'}
+                    </span>
+                  </div>
+                </output>
+              )}
+
+              <div className="api-credentials-grid resend-credentials-grid">
+                <label>
+                  Chave de API
+                  <input
+                    type="password"
+                    value={resendApiKey}
+                    onChange={(event) => setResendApiKey(event.target.value)}
+                    placeholder={resendStatus?.apiKeyHint || 're_...'}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <small>
+                    {resendStatus?.configured
+                      ? `Credencial atual: ${resendStatus.apiKeyHint}. Deixe vazio para manter.`
+                      : 'Crie uma chave em API Keys no painel da Resend.'}
+                  </small>
+                </label>
+                <label>
+                  Nome do remetente
+                  <input
+                    value={resendFromName}
+                    onChange={(event) => setResendFromName(event.target.value)}
+                    placeholder="Vovó Tereza"
+                    autoComplete="organization"
+                  />
+                  <small>Nome exibido na caixa de entrada do cliente.</small>
+                </label>
+                <label>
+                  E-mail remetente
+                  <input
+                    type="email"
+                    value={resendFromEmail}
+                    onChange={(event) => setResendFromEmail(event.target.value)}
+                    placeholder="pedidos@seudominio.com.br"
+                    autoComplete="email"
+                  />
+                  <small>
+                    Use um endereço de um domínio verificado na Resend.
+                  </small>
+                </label>
+                <label>
+                  E-mail para respostas{' '}
+                  <span className="optional-label">Opcional</span>
+                  <input
+                    type="email"
+                    value={resendReplyTo}
+                    onChange={(event) => setResendReplyTo(event.target.value)}
+                    placeholder="contato@seudominio.com.br"
+                    autoComplete="email"
+                  />
+                  <small>
+                    As respostas das clientes serão direcionadas para cá.
+                  </small>
+                </label>
+              </div>
+
+              <section
+                className="email-template-section"
+                aria-labelledby="email-templates-title"
+              >
+                <div className="email-template-heading">
+                  <div>
+                    <strong id="email-templates-title">
+                      Automações incluídas
+                    </strong>
+                    <span>
+                      Os dois e-mails seguem a identidade visual da página de
+                      vendas.
+                    </span>
+                  </div>
+                  <span className="email-template-badge">Banner exclusivo</span>
+                </div>
+                <div className="email-template-grid">
+                  <article className="email-template-card">
+                    <Image
+                      src="/images/email/vovo-tereza-email-banner.jpg"
+                      alt="Vovó Tereza preparando receitas em uma cozinha acolhedora"
+                      width={1200}
+                      height={400}
+                    />
+                    <div>
+                      <span>Imediatamente após o pagamento</span>
+                      <h3>Compra confirmada + downloads</h3>
+                      <p>
+                        Lista cada e-book comprado com seu botão individual de
+                        download.
+                      </p>
+                    </div>
+                  </article>
+                  <article className="email-template-card">
+                    <Image
+                      src="/images/email/vovo-tereza-email-banner.jpg"
+                      alt=""
+                      width={1200}
+                      height={400}
+                    />
+                    <div>
+                      <span>Agendado para 3 dias depois</span>
+                      <h3>Complete a sua coleção</h3>
+                      <p>
+                        Apresenta apenas os e-books ativos que ficaram de fora
+                        da compra.
+                      </p>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              <p className="api-security-note">
+                <KeyRound aria-hidden="true" /> A chave da Resend é
+                criptografada e usada somente no servidor. Ela nunca aparece na
+                página de vendas.
+              </p>
+              {notice}
+            </form>
+          </div>
         )}
 
         {['SEO e palavras-chave', 'Pixels'].includes(active) && (
