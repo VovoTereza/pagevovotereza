@@ -469,6 +469,14 @@ export function Storefront() {
     line.kind === 'product'
       ? getProduct(line.id)?.coverImage
       : getProduct(getBundle(line.id)?.productIds[0] || '')?.coverImage;
+  const lineProducts = (line: CartLine) =>
+    (line.kind === 'bundle'
+      ? getBundle(line.id)?.productIds || []
+      : [line.id]
+    ).flatMap((productId) => {
+      const product = getProduct(productId);
+      return product ? [product] : [];
+    });
   const selectedBundleData = getBundle(selectedBundle) || bundles[0];
   const floatingBuyBooks = selectedBundleData
     ? selectedBundleData.productIds.slice(0, 4).map((productId) => ({
@@ -504,7 +512,11 @@ export function Storefront() {
         >
           <BrandLogo priority />
         </Link>
-        <nav className="desktop-nav" aria-label="Navegação principal" data-editor-field="navLabels">
+        <nav
+          className="desktop-nav"
+          aria-label="Navegação principal"
+          data-editor-field="navLabels"
+        >
           <a href="#livro">{config.navLabels[0]}</a>
           <a href="#para-voce">{config.navLabels[1]}</a>
           <a href="#historia">{config.navLabels[2]}</a>
@@ -562,7 +574,11 @@ export function Storefront() {
             <p className="hero-subtitle" data-editor-field="heroSubtitle">
               {config.heroSubtitle}
             </p>
-            <ul className="hero-benefits" aria-label="Destaques dos cadernos" data-editor-field="heroBenefits">
+            <ul
+              className="hero-benefits"
+              aria-label="Destaques dos cadernos"
+              data-editor-field="heroBenefits"
+            >
               <li>
                 <Leaf aria-hidden="true" /> {config.heroBenefits[0]}
               </li>
@@ -616,7 +632,11 @@ export function Storefront() {
             </div>
           </motion.div>
         </section>
-        <section className="proof-strip" aria-label="Características da coleção" data-editor-field="proofItems">
+        <section
+          className="proof-strip"
+          aria-label="Características da coleção"
+          data-editor-field="proofItems"
+        >
           <div className="proof-track">
             {[false, true].map((duplicate) => (
               <div
@@ -641,7 +661,11 @@ export function Storefront() {
           </div>
         </section>
         <section className="pain-section" id="para-voce">
-          <motion.div className="section-heading" {...fade} data-editor-field="painHeading">
+          <motion.div
+            className="section-heading"
+            {...fade}
+            data-editor-field="painHeading"
+          >
             <p className="eyebrow">{config.painEyebrow}</p>
             <h2>{config.painTitle}</h2>
             <p>{config.painDescription}</p>
@@ -657,7 +681,11 @@ export function Storefront() {
           </div>
         </section>
         <section className="collection-contents-section" id="recebe">
-          <motion.div className="section-heading" {...fade} data-editor-field="contentsHeading">
+          <motion.div
+            className="section-heading"
+            {...fade}
+            data-editor-field="contentsHeading"
+          >
             <p className="eyebrow">{config.contentsEyebrow}</p>
             <h2>{config.contentsTitle}</h2>
             <p>{config.contentsDescription}</p>
@@ -793,7 +821,10 @@ export function Storefront() {
             </div>
           ) : (
             <>
-              <output className="comments-public-empty" data-editor-field="commentsEmpty">
+              <output
+                className="comments-public-empty"
+                data-editor-field="commentsEmpty"
+              >
                 <MessageSquareQuote aria-hidden="true" />
                 <div>
                   <strong>{config.commentsEmptyTitle}</strong>
@@ -1038,7 +1069,11 @@ export function Storefront() {
           <BrandLogo />
         </div>
         <p data-editor-field="footerText">{config.footerText}</p>
-        <nav className="social-links" aria-label="Redes sociais da Vovó Tereza" data-editor-field="footerSocial">
+        <nav
+          className="social-links"
+          aria-label="Redes sociais da Vovó Tereza"
+          data-editor-field="footerSocial"
+        >
           <a
             href={config.facebookUrl}
             target="_blank"
@@ -1170,8 +1205,12 @@ export function Storefront() {
             >
               <header
                 className={`cart-banner${cartBanner ? ' has-image' : ''}`}
-                data-editor-field={cart.length ? 'cartBannerFilled' : 'cartBannerEmpty'}
-                style={cartBanner ? { aspectRatio: cartBannerRatio ?? 4 } : undefined}
+                data-editor-field={
+                  cart.length ? 'cartBannerFilled' : 'cartBannerEmpty'
+                }
+                style={
+                  cartBanner ? { aspectRatio: cartBannerRatio ?? 4 } : undefined
+                }
               >
                 <h2 id="cart-title" className="sr-only">
                   Carrinho
@@ -1184,7 +1223,8 @@ export function Storefront() {
                     sizes="(max-width: 600px) 100vw, 480px"
                     unoptimized={cartBanner.startsWith('/api/media')}
                     onLoad={(event) => {
-                      const { naturalWidth, naturalHeight } = event.currentTarget;
+                      const { naturalWidth, naturalHeight } =
+                        event.currentTarget;
                       if (naturalWidth && naturalHeight) {
                         setCartBannerRatio(naturalWidth / naturalHeight);
                       }
@@ -1200,7 +1240,10 @@ export function Storefront() {
                 </button>
               </header>
               {!cart.length ? (
-                <div className="empty-cart" data-editor-field="cartEmptyContent">
+                <div
+                  className="empty-cart"
+                  data-editor-field="cartEmptyContent"
+                >
                   <div className="empty-cart-icon" aria-hidden="true">
                     <ShoppingBag />
                   </div>
@@ -1217,45 +1260,78 @@ export function Storefront() {
               ) : (
                 <>
                   <div className="cart-lines">
-                    {cart.map((line, index) => (
-                      <div
-                        className="cart-line"
-                        key={`${line.kind}-${line.id}`}
-                      >
-                        <div className="cart-thumb">
-                          {lineCover(line) ? (
-                            <Image
-                              src={lineCover(line)!}
-                              alt=""
-                              width={48}
-                              height={64}
-                              unoptimized
-                            />
+                    {cart.map((line, index) => {
+                      const productsInLine = lineProducts(line);
+                      const isBundle = line.kind === 'bundle';
+
+                      return (
+                        <div
+                          className={`cart-line${isBundle ? ' is-bundle' : ''}`}
+                          key={`${line.kind}-${line.id}`}
+                        >
+                          {isBundle ? (
+                            <div
+                              className="cart-thumb cart-thumb-bundle"
+                              aria-label={`Capas incluídas: ${productsInLine
+                                .map((product) => product.name)
+                                .join(', ')}`}
+                            >
+                              {productsInLine.map((product) => (
+                                <span
+                                  className="cart-thumb-book"
+                                  key={product.id}
+                                >
+                                  {product.coverImage ? (
+                                    <Image
+                                      src={product.coverImage}
+                                      alt=""
+                                      width={48}
+                                      height={64}
+                                      unoptimized
+                                    />
+                                  ) : (
+                                    <BookOpen aria-hidden="true" />
+                                  )}
+                                </span>
+                              ))}
+                            </div>
                           ) : (
-                            <BookOpen />
+                            <div className="cart-thumb">
+                              {lineCover(line) ? (
+                                <Image
+                                  src={lineCover(line)!}
+                                  alt=""
+                                  width={48}
+                                  height={64}
+                                  unoptimized
+                                />
+                              ) : (
+                                <BookOpen aria-hidden="true" />
+                              )}
+                            </div>
                           )}
+                          <div>
+                            <strong>{line.title}</strong>
+                            <small>
+                              {line.kind === 'bundle'
+                                ? getBundle(line.id)?.productIds.length +
+                                  ` ${config.cartBundleItemLabel}`
+                                : config.cartProductItemLabel}
+                            </small>
+                            <button
+                              onClick={() =>
+                                setCart((current) =>
+                                  current.filter((_, i) => i !== index),
+                                )
+                              }
+                            >
+                              {config.cartRemoveText}
+                            </button>
+                          </div>
+                          <span>{formatMoney(line.price)}</span>
                         </div>
-                        <div>
-                          <strong>{line.title}</strong>
-                          <small>
-                            {line.kind === 'bundle'
-                              ? getBundle(line.id)?.productIds.length +
-                                ` ${config.cartBundleItemLabel}`
-                              : config.cartProductItemLabel}
-                          </small>
-                          <button
-                            onClick={() =>
-                              setCart((current) =>
-                                current.filter((_, i) => i !== index),
-                              )
-                            }
-                          >
-                            {config.cartRemoveText}
-                          </button>
-                        </div>
-                        <span>{formatMoney(line.price)}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   {!hasProduct(orderBump.productId) && (
                     <div className="bump">
@@ -1282,19 +1358,29 @@ export function Storefront() {
                           </>
                         )}
                       </div>
-                      <div className="offer-card-copy" data-editor-field="cartBumpCopy">
+                      <div
+                        className="offer-card-copy"
+                        data-editor-field="cartBumpCopy"
+                      >
                         <span>{config.cartBumpEyebrow}</span>
                         <h3>{orderBump.headline}</h3>
                         <p>{orderBump.description}</p>
                         <div className="offer-recipe-preview">
                           <small>{config.cartBumpRecipeLabel}</small>
                           <strong>
-                            {config.cartBumpRecipes[offerRecipeIndexes.bump % config.cartBumpRecipes.length].title}
+                            {
+                              config.cartBumpRecipes[
+                                offerRecipeIndexes.bump %
+                                  config.cartBumpRecipes.length
+                              ].title
+                            }
                           </strong>
                           <p>
                             {
-                              config.cartBumpRecipes[offerRecipeIndexes.bump % config.cartBumpRecipes.length]
-                                .text
+                              config.cartBumpRecipes[
+                                offerRecipeIndexes.bump %
+                                  config.cartBumpRecipes.length
+                              ].text
                             }
                           </p>
                         </div>
@@ -1339,7 +1425,10 @@ export function Storefront() {
                           </>
                         )}
                       </div>
-                      <div className="offer-card-copy" data-editor-field="cartOfferCopy">
+                      <div
+                        className="offer-card-copy"
+                        data-editor-field="cartOfferCopy"
+                      >
                         <span>{config.cartOfferEyebrow}</span>
                         <h3>{cartOffer.headline}</h3>
                         <p>{cartOffer.description}</p>
@@ -1348,14 +1437,16 @@ export function Storefront() {
                           <strong>
                             {
                               config.cartOfferRecipes[
-                                offerRecipeIndexes.ingredients % config.cartOfferRecipes.length
+                                offerRecipeIndexes.ingredients %
+                                  config.cartOfferRecipes.length
                               ].title
                             }
                           </strong>
                           <p>
                             {
                               config.cartOfferRecipes[
-                                offerRecipeIndexes.ingredients % config.cartOfferRecipes.length
+                                offerRecipeIndexes.ingredients %
+                                  config.cartOfferRecipes.length
                               ].text
                             }
                           </p>
@@ -1383,7 +1474,10 @@ export function Storefront() {
                     title={config.galleryTitle}
                     compactTitle={config.cartGalleryTitle}
                   />
-                  <div className="cart-summary" data-editor-field="cartSummaryCopy">
+                  <div
+                    className="cart-summary"
+                    data-editor-field="cartSummaryCopy"
+                  >
                     <div className="cart-total-row">
                       <span>{config.cartSubtotalLabel}</span>
                       <strong>{formatMoney(subtotal)}</strong>
@@ -1396,7 +1490,8 @@ export function Storefront() {
                       <strong>{formatMoney(savings)}</strong>
                     </div>
                     <p>
-                      <LockKeyhole aria-hidden="true" /> {config.cartSecurityText}
+                      <LockKeyhole aria-hidden="true" />{' '}
+                      {config.cartSecurityText}
                     </p>
                     {checkoutError && (
                       <div className="form-error" role="alert">
@@ -1412,7 +1507,10 @@ export function Storefront() {
                         ? config.cartCheckoutLoadingText
                         : config.cartCheckoutCtaText}
                     </button>
-                    <PaymentMethods note={config.paymentNote} securityText={config.paymentSecurityText} />
+                    <PaymentMethods
+                      note={config.paymentNote}
+                      securityText={config.paymentSecurityText}
+                    />
                   </div>
                 </>
               )}
@@ -1460,9 +1558,8 @@ export function Storefront() {
                   className="exit-banner"
                   style={{
                     aspectRatio: String(
-                      exitBannerRatios[
-                        exitOffers[exitStage - 1].banner!
-                      ] || 8 / 3,
+                      exitBannerRatios[exitOffers[exitStage - 1].banner!] ||
+                        8 / 3,
                     ),
                   }}
                 >
@@ -1471,7 +1568,9 @@ export function Storefront() {
                     alt=""
                     fill
                     sizes="(max-width: 600px) calc(100vw - 24px), 560px"
-                    unoptimized={exitOffers[exitStage - 1].banner!.startsWith('/api/media')}
+                    unoptimized={exitOffers[exitStage - 1].banner!.startsWith(
+                      '/api/media',
+                    )}
                     onLoad={(event) => {
                       const { naturalWidth, naturalHeight } =
                         event.currentTarget;
@@ -1502,7 +1601,10 @@ export function Storefront() {
                   className="text-button"
                   onClick={() => {
                     setExitOpen(false);
-                    sessionStorage.setItem('vovo-exit-stage', String(exitStage));
+                    sessionStorage.setItem(
+                      'vovo-exit-stage',
+                      String(exitStage),
+                    );
                   }}
                 >
                   Não, quero continuar navegando

@@ -3757,6 +3757,60 @@ footer .brand-logo {
   width: 56px;
   min-height: 64px;
 }
+.cart-line.is-bundle {
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+}
+.cart-thumb.cart-thumb-bundle {
+  width: 84px;
+  min-height: 72px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: visible;
+  padding: 5px 3px 3px;
+  background: transparent;
+}
+.cart-thumb-book {
+  position: relative;
+  width: 37px;
+  aspect-ratio: 3 / 4;
+  flex: 0 0 37px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  margin-left: -17px;
+  border: 2px solid #fffdf8;
+  border-radius: 4px;
+  background: #e9dcc8;
+  color: var(--terracotta);
+  box-shadow: 0 5px 12px rgba(54, 38, 27, 0.2);
+  transform-origin: 50% 100%;
+}
+.cart-thumb-book:first-child {
+  margin-left: 0;
+  transform: rotate(-7deg) translateY(2px);
+}
+.cart-thumb-book:nth-child(2) {
+  z-index: 2;
+  transform: translateY(-3px);
+}
+.cart-thumb-book:nth-child(3) {
+  z-index: 3;
+  transform: rotate(7deg) translateY(2px);
+}
+.cart-thumb-book:nth-child(n + 4) {
+  z-index: 4;
+  transform: rotate(11deg) translateY(3px);
+}
+.cart-thumb-bundle .cart-thumb-book img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.cart-thumb-book svg {
+  width: 19px;
+  height: 19px;
+}
 .bump {
   border-radius: 10px;
 }
@@ -3787,9 +3841,21 @@ footer .brand-logo {
     grid-template-columns: 52px minmax(0, 1fr);
     gap: 10px 12px;
   }
+  .cart-line.is-bundle {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
   .cart-thumb {
     width: 52px;
     min-height: 60px;
+  }
+  .cart-thumb.cart-thumb-bundle {
+    width: 72px;
+    min-height: 66px;
+  }
+  .cart-thumb-book {
+    width: 32px;
+    flex-basis: 32px;
+    margin-left: -15px;
   }
 }
 
