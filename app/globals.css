@@ -1151,9 +1151,11 @@ footer small {
   inset: 0;
   width: min(560px, calc(100% - 32px));
   height: max-content;
+  max-height: calc(100dvh - 24px);
   margin: auto;
   padding: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   border-radius: 12px;
   background: var(--paper);
   text-align: center;
@@ -1161,15 +1163,34 @@ footer small {
 }
 .exit-modal > .close {
   position: absolute;
-  right: 15px;
-  top: 15px;
+  right: 4px;
+  top: 4px;
   z-index: 2;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(28, 25, 20, 0.84);
+  box-shadow: none;
+  filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.95));
+}
+.exit-modal > .close svg {
+  width: 15px;
+  height: 15px;
+}
+.exit-modal > .close:hover {
+  background: transparent;
+  color: var(--terracotta-dark);
 }
 .exit-banner {
   position: relative;
   width: 100%;
-  aspect-ratio: 8 / 3;
-  background: var(--paper);
+  flex: 0 0 auto;
+  background: transparent;
 }
 .exit-banner img {
   object-fit: contain;

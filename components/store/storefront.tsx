@@ -102,6 +102,9 @@ export function Storefront() {
   const [checkoutError, setCheckoutError] = useState('');
   const [floatingBuyVisible, setFloatingBuyVisible] = useState(false);
   const [cartBannerRatio, setCartBannerRatio] = useState<number | null>(null);
+  const [exitBannerRatios, setExitBannerRatios] = useState<
+    Record<string, number>
+  >({});
   const isEditorPreview = useSyncExternalStore(
     subscribeToEditorPreview,
     getEditorPreviewSnapshot,
@@ -1453,13 +1456,32 @@ export function Storefront() {
                 <X />
               </button>
               {exitOffers[exitStage - 1].banner && (
-                <div className="exit-banner">
+                <div
+                  className="exit-banner"
+                  style={{
+                    aspectRatio: String(
+                      exitBannerRatios[
+                        exitOffers[exitStage - 1].banner!
+                      ] || 8 / 3,
+                    ),
+                  }}
+                >
                   <Image
                     src={exitOffers[exitStage - 1].banner!}
                     alt=""
                     fill
                     sizes="(max-width: 600px) calc(100vw - 24px), 560px"
                     unoptimized={exitOffers[exitStage - 1].banner!.startsWith('/api/media')}
+                    onLoad={(event) => {
+                      const { naturalWidth, naturalHeight } =
+                        event.currentTarget;
+                      if (!naturalWidth || !naturalHeight) return;
+                      const banner = exitOffers[exitStage - 1].banner!;
+                      setExitBannerRatios((current) => ({
+                        ...current,
+                        [banner]: naturalWidth / naturalHeight,
+                      }));
+                    }}
                   />
                 </div>
               )}
