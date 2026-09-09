@@ -3031,7 +3031,7 @@ export function AdminDashboard({
                       height={32}
                     />
                   </span>
-                  <div>
+                  <div className="api-provider-copy">
                     <div className="api-provider-title-row">
                       <h2>Stripe</h2>
                       <span
@@ -3152,7 +3152,7 @@ export function AdminDashboard({
                   <span className="api-provider-logo resend-provider-logo">
                     <MailCheck aria-hidden="true" />
                   </span>
-                  <div>
+                  <div className="api-provider-copy">
                     <div className="api-provider-title-row">
                       <h2>Resend</h2>
                       <span
@@ -3202,7 +3202,7 @@ export function AdminDashboard({
 
               <div className="api-credentials-grid resend-credentials-grid">
                 <label>
-                  Chave de API
+                  <span className="api-field-heading">Chave de API</span>
                   <input
                     type="password"
                     value={resendApiKey}
@@ -3218,7 +3218,7 @@ export function AdminDashboard({
                   </small>
                 </label>
                 <label>
-                  Nome do remetente
+                  <span className="api-field-heading">Nome do remetente</span>
                   <input
                     value={resendFromName}
                     onChange={(event) => setResendFromName(event.target.value)}
@@ -3228,7 +3228,7 @@ export function AdminDashboard({
                   <small>Nome exibido na caixa de entrada do cliente.</small>
                 </label>
                 <label>
-                  E-mail remetente
+                  <span className="api-field-heading">E-mail remetente</span>
                   <input
                     type="email"
                     value={resendFromEmail}
@@ -3241,8 +3241,10 @@ export function AdminDashboard({
                   </small>
                 </label>
                 <label>
-                  E-mail para respostas{' '}
-                  <span className="optional-label">Opcional</span>
+                  <span className="api-field-heading">
+                    E-mail para respostas
+                    <span className="optional-label">Opcional</span>
+                  </span>
                   <input
                     type="email"
                     value={resendReplyTo}
