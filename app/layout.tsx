@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     locale: 'pt_BR',
     images: [
       {
-        url: '/og-vovo-tereza.jpg',
+        url: 'https://pagevovotereza.vercel.app/og-vovo-tereza.jpg',
         width: 1200,
         height: 630,
         alt: 'Receitas naturais para cuidar de você — Vovó Tereza',
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Vovó Tereza',
     description: 'Receitas naturais e autocuidado em cadernos digitais.',
-    images: ['/og-vovo-tereza.jpg'],
+    images: ['https://pagevovotereza.vercel.app/og-vovo-tereza.jpg'],
   },
 };
 
