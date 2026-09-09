@@ -5523,6 +5523,8 @@ footer .brand-logo {
 
 /* Authorized customer comments between contents and benefits. */
 .customer-comments {
+  width: 100vw;
+  max-width: none;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
