@@ -3743,6 +3743,9 @@ footer .brand-logo {
   line-height: 1.5;
 }
 .cart-lines {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
   padding: 12px 24px 4px;
 }
 .cart-line {
@@ -3891,6 +3894,7 @@ footer .brand-logo {
 .cart-drawer > header.cart-banner {
   position: sticky;
   top: 0;
+  z-index: 20;
   min-height: 64px;
   padding: 0;
   overflow: hidden;
