@@ -6142,10 +6142,13 @@ footer .brand-logo {
 .api-credentials-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 20px;
 }
 .api-credentials-grid label {
   display: grid;
+  align-content: start;
+  grid-template-rows: auto auto auto;
   gap: 7px;
 }
 .api-credentials-grid small {
