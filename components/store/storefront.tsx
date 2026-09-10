@@ -46,6 +46,7 @@ import {
   IconsaxYoutube,
 } from './social-icons';
 import { BrandLogo } from '@/components/brand-logo';
+import { EmbeddedStripeCheckout } from './embedded-stripe-checkout';
 import { defaultCatalog, defaultSiteConfig, formatMoney } from '@/lib/catalog';
 import { getAnalyticsContext, sendAnalytics } from '@/lib/client/analytics';
 
@@ -58,6 +59,12 @@ type CartLine = {
   title: string;
   source?: 'order_bump' | 'cart_offer' | 'exit_offer';
   offerStage?: number;
+};
+
+type EmbeddedCheckoutData = {
+  clientSecret: string;
+  publishableKey: string;
+  sessionId: string;
 };
 
 function track(name: string, data: Record<string, unknown> = {}) {
@@ -99,6 +106,8 @@ export function Storefront() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [checkingOut, setCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+  const [embeddedCheckout, setEmbeddedCheckout] =
+    useState<EmbeddedCheckoutData | null>(null);
   const [floatingBuyVisible, setFloatingBuyVisible] = useState(false);
   const [cartBannerRatio, setCartBannerRatio] = useState<number | null>(null);
   const [exitBannerRatios, setExitBannerRatios] = useState<
@@ -242,15 +251,25 @@ export function Storefront() {
       })
       .catch(() => undefined);
     if (!isEditorPreview) track('page_view');
-    if (!isEditorPreview && new URLSearchParams(window.location.search).get('checkout') === 'cancelado')
+    if (
+      !isEditorPreview &&
+      new URLSearchParams(window.location.search).get('checkout') ===
+        'cancelado'
+    )
       track('checkout_cancelled');
   }, [isEditorPreview]);
   useEffect(() => {
     if (isEditorPreview) return;
     const heartbeat = () => {
-      if (document.visibilityState === 'visible') sendAnalytics('session_heartbeat');
+      if (document.visibilityState === 'visible')
+        sendAnalytics('session_heartbeat');
     };
-    const visibility = () => sendAnalytics(document.visibilityState === 'visible' ? 'session_resume' : 'session_hidden');
+    const visibility = () =>
+      sendAnalytics(
+        document.visibilityState === 'visible'
+          ? 'session_resume'
+          : 'session_hidden',
+      );
     const leave = () => sendAnalytics('session_end');
     const timer = window.setInterval(heartbeat, 4000);
     document.addEventListener('visibilitychange', visibility);
@@ -444,9 +463,16 @@ export function Storefront() {
     setCheckoutError('');
     const acceptedBump = cart.some((line) => line.source === 'order_bump');
     const acceptedOffer = cart.some((line) => line.source === 'cart_offer');
-    if (!acceptedBump) track('order_bump_reject', { productId: orderBump.productId });
-    if (!acceptedOffer) track('cart_offer_reject', { productId: cartOffer.productId });
-    track('checkout_started', { total: subtotal, itemCount: cart.length, acceptedBump, acceptedOffer });
+    if (!acceptedBump)
+      track('order_bump_reject', { productId: orderBump.productId });
+    if (!acceptedOffer)
+      track('cart_offer_reject', { productId: cartOffer.productId });
+    track('checkout_started', {
+      total: subtotal,
+      itemCount: cart.length,
+      acceptedBump,
+      acceptedOffer,
+    });
     try {
       const response = await fetch('/api/checkout', {
         method: 'POST',
@@ -463,10 +489,24 @@ export function Storefront() {
           })),
         }),
       });
-      const data = (await response.json()) as { url?: string; error?: string };
-      if (!response.ok || !data.url)
+      const data = (await response.json()) as Partial<EmbeddedCheckoutData> & {
+        url?: string;
+        error?: string;
+      };
+      if (!response.ok)
         throw new Error(data.error || 'Não foi possível iniciar o pagamento.');
-      window.location.assign(data.url);
+      if (data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+      if (!data.clientSecret || !data.publishableKey || !data.sessionId)
+        throw new Error(data.error || 'Não foi possível abrir o pagamento.');
+      setEmbeddedCheckout({
+        clientSecret: data.clientSecret,
+        publishableKey: data.publishableKey,
+        sessionId: data.sessionId,
+      });
+      setCheckingOut(false);
     } catch (error) {
       setCheckoutError(
         error instanceof Error
@@ -1207,14 +1247,17 @@ export function Storefront() {
             <motion.button
               className="drawer-backdrop"
               aria-label="Fechar carrinho"
-              onClick={() => { setDrawerOpen(false); track('cart_close', { method: 'backdrop' }); }}
+              onClick={() => {
+                setDrawerOpen(false);
+                track('cart_close', { method: 'backdrop' });
+              }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             />
             <motion.dialog
               open
-              className="cart-drawer"
+              className={`cart-drawer${embeddedCheckout ? ' is-checkout' : ''}`}
               aria-labelledby="cart-title"
               aria-modal="true"
               initial={reduceMotion ? {} : { x: '100%' }}
@@ -1252,13 +1295,34 @@ export function Storefront() {
                 )}
                 <button
                   className="icon-button"
-                  onClick={() => { setDrawerOpen(false); track('cart_close', { method: 'button' }); }}
+                  onClick={() => {
+                    setDrawerOpen(false);
+                    track('cart_close', { method: 'button' });
+                  }}
                   aria-label="Fechar carrinho"
                 >
                   <X />
                 </button>
               </header>
-              {!cart.length ? (
+              {embeddedCheckout ? (
+                <div className="cart-checkout-view">
+                  <div className="cart-checkout-toolbar">
+                    <button
+                      type="button"
+                      className="cart-checkout-back"
+                      onClick={() => {
+                        setEmbeddedCheckout(null);
+                        track('checkout_cancelled', { method: 'back_to_cart' });
+                      }}
+                    >
+                      <ChevronLeft aria-hidden="true" />
+                      Voltar ao resumo
+                    </button>
+                    <strong>{formatMoney(subtotal)}</strong>
+                  </div>
+                  <EmbeddedStripeCheckout {...embeddedCheckout} />
+                </div>
+              ) : !cart.length ? (
                 <div
                   className="empty-cart"
                   data-editor-field="cartEmptyContent"
@@ -1270,7 +1334,10 @@ export function Storefront() {
                   <p>{config.cartEmptyText}</p>
                   <button
                     className="primary-button"
-                    onClick={() => { setDrawerOpen(false); track('cart_close', { method: 'empty_cta' }); }}
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      track('cart_close', { method: 'empty_cta' });
+                    }}
                   >
                     {config.cartEmptyCtaText}
                   </button>
@@ -1356,7 +1423,11 @@ export function Storefront() {
                                 setCart((current) =>
                                   current.filter((_, i) => i !== index),
                                 );
-                                track('cart_item_removed', { id: line.id, kind: line.kind, source: line.source || 'catalog' });
+                                track('cart_item_removed', {
+                                  id: line.id,
+                                  kind: line.kind,
+                                  source: line.source || 'catalog',
+                                });
                               }}
                             >
                               {config.cartRemoveText}

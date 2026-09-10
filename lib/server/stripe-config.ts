@@ -10,6 +10,7 @@ const SETTINGS_KEY = 'stripe_integration';
 
 export type StripeCredentials = {
   secretKey: string;
+  publishableKey: string;
   webhookSecret: string;
   accountId?: string;
   accountName?: string;
@@ -18,7 +19,9 @@ export type StripeCredentials = {
 
 export type StripeIntegrationStatus = {
   configured: boolean;
+  embeddedCheckoutConfigured: boolean;
   secretKeyHint: string;
+  publishableKeyHint: string;
   webhookConfigured: boolean;
   webhookSecretHint: string;
   mode: 'test' | 'live' | null;
@@ -58,6 +61,7 @@ export async function resolveStripeCredentials(): Promise<{
     source: 'environment',
     credentials: {
       secretKey: env.STRIPE_SECRET_KEY,
+      publishableKey: env.STRIPE_PUBLISHABLE_KEY || '',
       webhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
     },
   };
@@ -83,7 +87,9 @@ export async function getStripeIntegrationStatus(): Promise<StripeIntegrationSta
   const { credentials, source } = await resolveStripeCredentials();
   return {
     configured: Boolean(credentials?.secretKey),
+    embeddedCheckoutConfigured: Boolean(credentials?.publishableKey),
     secretKeyHint: maskSecret(credentials?.secretKey || ''),
+    publishableKeyHint: maskSecret(credentials?.publishableKey || ''),
     webhookConfigured: Boolean(credentials?.webhookSecret),
     webhookSecretHint: maskSecret(credentials?.webhookSecret || ''),
     mode: credentials?.secretKey

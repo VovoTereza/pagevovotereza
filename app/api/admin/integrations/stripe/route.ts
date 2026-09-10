@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 const schema = z.object({
   secretKey: z.string().trim().max(300).optional().default(''),
+  publishableKey: z.string().trim().max(300).optional().default(''),
   webhookSecret: z.string().trim().max(300).optional().default(''),
 });
 
@@ -51,12 +52,38 @@ export async function PUT(request: NextRequest) {
   try {
     const current = (await resolveStripeCredentials()).credentials;
     const secretKey = parsed.data.secretKey || current?.secretKey || '';
+    const publishableKey =
+      parsed.data.publishableKey || current?.publishableKey || '';
     const webhookSecret =
       parsed.data.webhookSecret || current?.webhookSecret || '';
 
     if (!/^sk_(test|live)_/.test(secretKey))
       return NextResponse.json(
-        { error: 'Informe uma chave secreta Stripe válida (sk_test_ ou sk_live_).' },
+        {
+          error:
+            'Informe uma chave secreta Stripe válida (sk_test_ ou sk_live_).',
+        },
+        { status: 400 },
+      );
+    if (!/^pk_(test|live)_/.test(publishableKey))
+      return NextResponse.json(
+        {
+          error:
+            'Informe uma chave publicável Stripe válida (pk_test_ ou pk_live_).',
+        },
+        { status: 400 },
+      );
+    if (
+      (secretKey.startsWith('sk_live_') &&
+        !publishableKey.startsWith('pk_live_')) ||
+      (secretKey.startsWith('sk_test_') &&
+        !publishableKey.startsWith('pk_test_'))
+    )
+      return NextResponse.json(
+        {
+          error:
+            'As chaves secreta e publicável precisam pertencer ao mesmo modo da Stripe.',
+        },
         { status: 400 },
       );
     if (webhookSecret && !webhookSecret.startsWith('whsec_'))
@@ -77,6 +104,7 @@ export async function PUT(request: NextRequest) {
 
     await saveStripeCredentials({
       secretKey,
+      publishableKey,
       webhookSecret,
       accountId: account.id,
       accountName,

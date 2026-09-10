@@ -73,7 +73,9 @@ type AdminOrder = {
 
 type StripeIntegrationStatus = {
   configured: boolean;
+  embeddedCheckoutConfigured: boolean;
   secretKeyHint: string;
+  publishableKeyHint: string;
   webhookConfigured: boolean;
   webhookSecretHint: string;
   mode: 'test' | 'live' | null;
@@ -269,6 +271,7 @@ export function AdminDashboard({
   const [stripeStatus, setStripeStatus] =
     useState<StripeIntegrationStatus | null>(null);
   const [stripeSecretKey, setStripeSecretKey] = useState('');
+  const [stripePublishableKey, setStripePublishableKey] = useState('');
   const [stripeWebhookSecret, setStripeWebhookSecret] = useState('');
   const [stripeLoading, setStripeLoading] = useState(true);
   const [stripeWebhookUrl, setStripeWebhookUrl] = useState('');
@@ -464,8 +467,13 @@ export function AdminDashboard({
 
   async function saveStripeIntegration(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!stripeSecretKey && !stripeStatus?.configured) {
-      setMessage('Informe a chave secreta da Stripe antes de salvar.');
+    if (
+      (!stripeSecretKey && !stripeStatus?.configured) ||
+      (!stripePublishableKey && !stripeStatus?.embeddedCheckoutConfigured)
+    ) {
+      setMessage(
+        'Informe as chaves secreta e publicável da Stripe antes de salvar.',
+      );
       return;
     }
     setStripeLoading(true);
@@ -476,6 +484,7 @@ export function AdminDashboard({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           secretKey: stripeSecretKey,
+          publishableKey: stripePublishableKey,
           webhookSecret: stripeWebhookSecret,
         }),
       });
@@ -488,6 +497,7 @@ export function AdminDashboard({
         setStripeStatus(data.status || null);
         setStripeWebhookUrl(data.webhookUrl || stripeWebhookUrl);
         setStripeSecretKey('');
+        setStripePublishableKey('');
         setStripeWebhookSecret('');
         setMessage('Configuração da Stripe salva e validada.');
       } else {
@@ -911,9 +921,7 @@ export function AdminDashboard({
           </header>
         )}
 
-        {active === 'Visão geral' && (
-          <AnalyticsOverview />
-        )}
+        {active === 'Visão geral' && <AnalyticsOverview />}
 
         {active === 'Pedidos' && (
           <section className="admin-section">
@@ -2979,13 +2987,16 @@ export function AdminDashboard({
                     <div className="api-provider-title-row">
                       <h2>Stripe</h2>
                       <span
-                        className={`api-status ${stripeStatus?.configured ? 'connected' : ''}`}
+                        className={`api-status ${stripeStatus?.configured && stripeStatus?.embeddedCheckoutConfigured ? 'connected' : ''}`}
                       >
                         {stripeLoading && !stripeStatus
                           ? 'Verificando'
-                          : stripeStatus?.configured
+                          : stripeStatus?.configured &&
+                              stripeStatus?.embeddedCheckoutConfigured
                             ? 'Conectada'
-                            : 'Não configurada'}
+                            : stripeStatus?.configured
+                              ? 'Configuração incompleta'
+                              : 'Não configurada'}
                       </span>
                     </div>
                     <p className="admin-muted">
@@ -3030,7 +3041,7 @@ export function AdminDashboard({
                 </output>
               )}
 
-              <div className="api-credentials-grid">
+              <div className="api-credentials-grid stripe-credentials-grid">
                 <label>
                   Chave secreta
                   <input
@@ -3048,6 +3059,27 @@ export function AdminDashboard({
                     {stripeStatus?.configured
                       ? `Credencial atual: ${stripeStatus.secretKeyHint}. Deixe vazio para manter.`
                       : 'Encontrada em Desenvolvedores → Chaves de API no painel da Stripe.'}
+                  </small>
+                </label>
+                <label>
+                  Chave publicável
+                  <input
+                    type="password"
+                    value={stripePublishableKey}
+                    onChange={(event) =>
+                      setStripePublishableKey(event.target.value)
+                    }
+                    placeholder={
+                      stripeStatus?.publishableKeyHint ||
+                      'pk_live_... ou pk_test_...'
+                    }
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <small>
+                    {stripeStatus?.embeddedCheckoutConfigured
+                      ? `Credencial atual: ${stripeStatus.publishableKeyHint}. Deixe vazio para manter.`
+                      : 'Necessária para abrir o checkout incorporado dentro do carrinho.'}
                   </small>
                 </label>
                 <label>

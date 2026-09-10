@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCatalogConfig } from '@/lib/server/catalog-config';
 import { getStripe } from '@/lib/server/stripe';
+import { resolveStripeCredentials } from '@/lib/server/stripe-config';
 import { insertRows, updateRows } from '@/lib/server/supabase';
 
 const requestSchema = z.object({
@@ -30,7 +31,8 @@ export async function POST(request: NextRequest) {
         { error: 'O carrinho enviado não é válido.' },
         { status: 400 },
       );
-    const { products, bundles, orderBump, cartOffer, exitOffers } = await getCatalogConfig();
+    const { products, bundles, orderBump, cartOffer, exitOffers } =
+      await getCatalogConfig();
     const getBundle = (id: string) => bundles.find((item) => item.id === id);
     const getProduct = (id: string) => products.find((item) => item.id === id);
     const covered = new Set<string>();
@@ -78,18 +80,20 @@ export async function POST(request: NextRequest) {
       0,
     );
     if (total < 100) throw new Error('Total inválido.');
+    const { credentials } = await resolveStripeCredentials();
+    const embedded = Boolean(credentials?.publishableKey);
     const orderId = crypto.randomUUID();
     const orderNumber = `VT-${Date.now().toString(36).toUpperCase()}`;
     try {
       await insertRows('orders', {
-          id: orderId,
-          order_number: orderNumber,
-          subtotal: total,
-          total,
-          currency: 'BRL',
-          status: 'pending',
-          payment_status: 'pending',
-        });
+        id: orderId,
+        order_number: orderNumber,
+        subtotal: total,
+        total,
+        currency: 'BRL',
+        status: 'pending',
+        payment_status: 'pending',
+      });
     } catch (error) {
       console.error('pending_order_write_failed', error);
     }
@@ -124,16 +128,39 @@ export async function POST(request: NextRequest) {
             },
           },
         })),
-        success_url: `${origin}/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/receitas?checkout=cancelado#ofertas`,
+        ...(embedded
+          ? {
+              ui_mode: 'embedded_page' as const,
+              return_url: `${origin}/sucesso?session_id={CHECKOUT_SESSION_ID}`,
+              redirect_on_completion: 'if_required' as const,
+            }
+          : {
+              success_url: `${origin}/sucesso?session_id={CHECKOUT_SESSION_ID}`,
+              cancel_url: `${origin}/receitas?checkout=cancelado#ofertas`,
+            }),
       },
       { idempotencyKey: request.headers.get('x-idempotency-key') || orderId },
     );
-    await updateRows('orders', { id: `eq.${orderId}` }, {
-      stripe_checkout_session_id: session.id,
-      updated_at: new Date().toISOString(),
-    }).catch((error) => console.error('checkout_session_link_failed', error));
-    return NextResponse.json({ url: session.url, orderId });
+    await updateRows(
+      'orders',
+      { id: `eq.${orderId}` },
+      {
+        stripe_checkout_session_id: session.id,
+        updated_at: new Date().toISOString(),
+      },
+    ).catch((error) => console.error('checkout_session_link_failed', error));
+    if (embedded && !session.client_secret)
+      throw new Error(
+        'A Stripe não retornou os dados do checkout incorporado.',
+      );
+    return embedded
+      ? NextResponse.json({
+          clientSecret: session.client_secret,
+          publishableKey: credentials!.publishableKey,
+          sessionId: session.id,
+          orderId,
+        })
+      : NextResponse.json({ url: session.url, orderId });
   } catch (error) {
     return NextResponse.json(
       {
