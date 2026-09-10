@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import { AdminDashboard } from '@/components/admin/dashboard';
 import { getAdminEmail } from '@/lib/server/admin-auth';
-import { defaultSiteConfig } from '@/lib/catalog';
 import { getCatalogConfig } from '@/lib/server/catalog-config';
+import { getSiteConfig } from '@/lib/server/site-config';
 import { selectRows } from '@/lib/server/supabase';
 
 type AdminOrderRow = {
@@ -19,22 +19,11 @@ type AdminOrderRow = {
 
 export default async function AdminPage() {
   if (!(await getAdminEmail())) redirect('/admin/login');
-  let config = {
-    ...defaultSiteConfig,
-    keyword: 'babosa',
-    metaPixelId: '',
-    googleAnalyticsId: '',
-    tiktokPixelId: '',
-  };
+  const config = await getSiteConfig();
   let orderCount = 0;
   let revenue = 0;
   let recentOrders: AdminOrderRow[] = [];
   try {
-    const [row] = await selectRows<{ value: Partial<typeof config> }>('site_settings', {
-      key: 'eq.public_config', select: 'value', limit: 1,
-    });
-    if (row?.value)
-      config = { ...config, ...(row.value as Partial<typeof config>) };
     recentOrders = await selectRows<AdminOrderRow>('orders', {
       select: 'id,order_number,customer_name,customer_email,status,payment_status,total,currency,created_at',
       order: 'created_at.desc', limit: 50,
