@@ -6515,6 +6515,18 @@ footer .brand-logo {
 .analytics-donut-card li small { color: var(--muted); text-align: right; }
 .analytics-donut-card li.analytics-no-data { display: block; color: var(--muted); line-height: 1.5; }
 .analytics-footnote { margin: 14px 2px 0; color: var(--muted); font-size: 11px; }
+.analytics-tracking-card { margin-top: 18px; }
+.analytics-tracking-card > p { max-width: 760px; margin: -4px 0 18px; color: var(--muted); line-height: 1.55; }
+.analytics-tracking-card > div:not(.analytics-card-heading) { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 9px; }
+.analytics-tracking-card button {
+  min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: color-mix(in srgb,var(--cream),white 38%); color: var(--ink); font-weight: 750; cursor: pointer;
+}
+.analytics-tracking-card button:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.analytics-tracking-card button:focus-visible { outline: 3px solid color-mix(in srgb,var(--terracotta),transparent 65%); outline-offset: 2px; }
+.analytics-tracking-card button svg { width: 16px; flex: 0 0 auto; }
+.analytics-tracking-card > small { display: block; margin-top: 14px; color: var(--sage); line-height: 1.5; }
 .analytics-error { margin-bottom: 16px; padding: 12px 14px; border: 1px solid #dba999; border-radius: 8px; background: #fff1eb; color: #893a24; }
 .analytics-error button { margin-left: 8px; text-decoration: underline; }
 .admin-overview.is-loading { opacity: .78; }
@@ -6523,6 +6535,7 @@ footer .brand-logo {
   .analytics-kpi-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
   .analytics-live-grid { grid-template-columns: minmax(0,3fr) minmax(290px,2fr); }
   .analytics-donut-layout { grid-template-columns: 1fr; }
+  .analytics-tracking-card > div:not(.analytics-card-heading) { grid-template-columns: repeat(3,minmax(0,1fr)); }
 }
 @media (max-width: 800px) {
   .analytics-kpi-grid,.analytics-live-grid,.analytics-source-grid { grid-template-columns: 1fr; }
@@ -6545,6 +6558,7 @@ footer .brand-logo {
   .analytics-map { min-height: 280px; }
   .analytics-donut-layout { grid-template-columns: 1fr; }
   .analytics-donut { height: 190px; }
+  .analytics-tracking-card > div:not(.analytics-card-heading) { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .analytics-live-status i,.analytics-card-heading b::before { animation: none; }

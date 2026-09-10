@@ -252,7 +252,7 @@ export function Storefront() {
     };
     const visibility = () => sendAnalytics(document.visibilityState === 'visible' ? 'session_resume' : 'session_hidden');
     const leave = () => sendAnalytics('session_end');
-    const timer = window.setInterval(heartbeat, 10000);
+    const timer = window.setInterval(heartbeat, 4000);
     document.addEventListener('visibilitychange', visibility);
     window.addEventListener('pagehide', leave);
     heartbeat();

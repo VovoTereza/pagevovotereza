@@ -29,10 +29,17 @@ export async function POST(request: NextRequest) {
   };
   const active = !['session_hidden', 'session_end'].includes(name) && visibility !== 'hidden';
   const enriched = { ...payload, ...geo, visitorId };
+  const presenceEvent = name.startsWith('session_');
+  const lastEvent = presenceEvent && typeof payload.lastMeaningfulEvent === 'string'
+    ? payload.lastMeaningfulEvent
+    : name;
+  const lastActionAt = presenceEvent && typeof payload.lastMeaningfulEventAt === 'string'
+    ? payload.lastMeaningfulEventAt
+    : now;
   try {
     await upsertRows('site_settings', {
       key: `analytics_presence.${sessionId}`,
-      value: { ...enriched, sessionId, lastEvent: name, lastSeenAt: now, active },
+      value: { ...enriched, sessionId, lastEvent, lastActionAt, lastSeenAt: now, active },
       updated_at: now,
     }, 'key');
     if (name !== 'session_heartbeat') {
