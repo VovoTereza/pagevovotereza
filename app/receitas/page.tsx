@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     url: '/receitas',
     images: [
       {
-        url: 'https://pagevovotereza.vercel.app/og-vovo-tereza.jpg',
+        url: 'https://www.receitasdavovotereza.site/og-vovo-tereza.jpg',
         width: 1200,
         height: 630,
         alt: 'Receitas naturais para cuidar de você — Vovó Tereza',

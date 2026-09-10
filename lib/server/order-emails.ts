@@ -22,10 +22,9 @@ export async function sendOrderEmails(input: {
   if (!credentials) return;
 
   const siteUrl = (
-    env.NEXT_PUBLIC_SITE_URL ||
-    (env.NODE_ENV === 'production'
+    env.NODE_ENV === 'production'
       ? 'https://www.receitasdavovotereza.site'
-      : input.requestOrigin)
+      : env.NEXT_PUBLIC_SITE_URL || input.requestOrigin
   ).replace(/\/$/, '');
   const resend = new Resend(credentials.apiKey);
   const from = `${credentials.fromName} <${credentials.fromEmail}>`;

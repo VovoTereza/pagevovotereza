@@ -98,10 +98,9 @@ export async function POST(request: NextRequest) {
       console.error('pending_order_write_failed', error);
     }
     const origin = (
-      env.NEXT_PUBLIC_SITE_URL ||
-      (env.NODE_ENV === 'production'
+      env.NODE_ENV === 'production'
         ? 'https://www.receitasdavovotereza.site'
-        : request.nextUrl.origin)
+        : env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin
     ).replace(/\/$/, '');
     const stripe = await getStripe();
     const session = await stripe.checkout.sessions.create(
