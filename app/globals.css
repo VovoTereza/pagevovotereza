@@ -3623,6 +3623,21 @@ footer .brand-logo {
   gap: 14px;
   padding: 4px 14px 20px 2px;
 }
+.customer-stories.is-looping .customer-stories-rail {
+  overflow: hidden;
+}
+.customer-stories.is-looping .customer-stories-track {
+  width: max-content;
+  will-change: transform;
+  animation: customer-stories-scroll 28s linear infinite;
+}
+.customer-stories.is-looping .customer-stories-group {
+  justify-content: flex-start;
+  min-width: 0;
+}
+.customer-stories.is-looping .customer-stories-track:hover {
+  animation-play-state: paused;
+}
 .customer-story {
   position: relative;
   flex: 0 0 clamp(154px, 17vw, 190px);
@@ -3663,6 +3678,12 @@ footer .brand-logo {
   line-height: 1.35;
 }
 
+@keyframes customer-stories-scroll {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
 @media (max-width: 760px) {
   .customer-stories {
     margin-top: 48px;
@@ -3686,8 +3707,15 @@ footer .brand-logo {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .customer-stories-track {
+  .customer-stories.is-looping .customer-stories-rail {
+    overflow-x: auto;
+  }
+  .customer-stories.is-looping .customer-stories-track {
+    animation: none;
     transform: none;
+  }
+  .customer-stories-group[aria-hidden='true'] {
+    display: none;
   }
 }
 
@@ -4192,6 +4220,9 @@ footer .brand-logo {
   margin: 0;
   font-size: 21px;
   line-height: 1.2;
+}
+.customer-stories.compact.is-looping .customer-stories-track {
+  animation-duration: 16s;
 }
 .customer-stories.compact .customer-stories-group {
   gap: 10px;

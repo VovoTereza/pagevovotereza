@@ -22,7 +22,10 @@ import { PaymentIcon } from './payment-icons';
 export function PaymentMethods({
   note = 'As opções disponíveis são confirmadas no checkout.',
   securityText = 'Pagamento protegido por',
-}: { note?: string; securityText?: string }) {
+}: {
+  note?: string;
+  securityText?: string;
+}) {
   return (
     <div className="payment-methods">
       <p className="payment-security">
@@ -80,45 +83,53 @@ export function CustomerStories({
         .map((story) => [story.src.trim(), story]),
     ).values(),
   );
+  const shouldLoop = uniqueStories.length > 1;
   const titleId = compact
     ? 'cart-customer-stories-title'
     : 'customer-stories-title';
   return (
     <section
-      className={`customer-stories${compact ? ' compact' : ''}`}
+      className={`customer-stories${compact ? ' compact' : ''}${shouldLoop ? ' is-looping' : ''}`}
       aria-labelledby={titleId}
     >
       <div className="customer-stories-heading" data-editor-field="galleryCopy">
         <p className="eyebrow">{eyebrow}</p>
-        <h3 id={titleId}>
-          {compact ? compactTitle : title}
-        </h3>
+        <h3 id={titleId}>{compact ? compactTitle : title}</h3>
       </div>
       <div className="customer-stories-rail" data-editor-field="gallery">
         <div className="customer-stories-track">
-          <div className="customer-stories-group">
-            {uniqueStories.length > 0
-              ? uniqueStories.map((story) => (
-                  <figure className="customer-story" key={story.src}>
-                    <Image
-                      src={story.src}
-                      alt={story.alt}
-                      fill
-                      sizes="(max-width: 600px) 44vw, 180px"
-                    />
-                  </figure>
-                ))
-              : emptySlots.map((slot) => (
-                  <div
-                    className="customer-story customer-story-placeholder"
-                    key={slot}
-                    aria-label="Espaço reservado para foto autorizada de cliente"
-                  >
-                    <ImagePlus aria-hidden="true" />
-                    <span>Foto autorizada</span>
-                  </div>
-                ))}
-          </div>
+          {(shouldLoop ? [false, true] : [false]).map((isLoopCopy) => (
+            <div
+              className="customer-stories-group"
+              aria-hidden={isLoopCopy || undefined}
+              key={isLoopCopy ? 'loop-copy' : 'stories'}
+            >
+              {uniqueStories.length > 0
+                ? uniqueStories.map((story) => (
+                    <figure
+                      className="customer-story"
+                      key={`${isLoopCopy ? 'copy' : 'story'}-${story.src}`}
+                    >
+                      <Image
+                        src={story.src}
+                        alt={isLoopCopy ? '' : story.alt}
+                        fill
+                        sizes="(max-width: 600px) 44vw, 180px"
+                      />
+                    </figure>
+                  ))
+                : emptySlots.map((slot) => (
+                    <div
+                      className="customer-story customer-story-placeholder"
+                      key={slot}
+                      aria-label="Espaço reservado para foto autorizada de cliente"
+                    >
+                      <ImagePlus aria-hidden="true" />
+                      <span>Foto autorizada</span>
+                    </div>
+                  ))}
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -177,7 +188,11 @@ export function BundleSelector({
             </span>
           )}
         </div>
-        <ul className="collection-benefits" aria-label="Benefícios da coleção" data-editor-field="collectionBenefits">
+        <ul
+          className="collection-benefits"
+          aria-label="Benefícios da coleção"
+          data-editor-field="collectionBenefits"
+        >
           <li>
             <Check aria-hidden="true" />
             {content.collectionBenefits[0]}
@@ -325,7 +340,10 @@ export function BundleSelector({
         >
           {content.collectionCtaText} <span>{formatMoney(chosen.price)}</span>
         </button>
-        <PaymentMethods note={content.paymentNote} securityText={content.paymentSecurityText} />
+        <PaymentMethods
+          note={content.paymentNote}
+          securityText={content.paymentSecurityText}
+        />
         <CustomerStories
           eyebrow={content.galleryEyebrow}
           title={content.galleryTitle}
