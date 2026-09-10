@@ -38,7 +38,8 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
-  if (!(await authorized()))
+  const adminEmail = await getAdminEmail();
+  if (!adminEmail)
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success)
@@ -57,12 +58,19 @@ export async function PUT(request: NextRequest) {
       );
 
     const resend = new Resend(apiKey);
-    const validation = await resend.domains.list();
+    const validation = await resend.emails.send({
+      from: `${parsed.data.fromName} <${parsed.data.fromEmail}>`,
+      to: parsed.data.replyTo || adminEmail,
+      replyTo: parsed.data.replyTo || undefined,
+      subject: 'Envio de e-mails configurado · Vovó Tereza',
+      html: '<p>A entrega automática dos e-books da Vovó Tereza foi configurada com sucesso.</p>',
+      text: 'A entrega automática dos e-books da Vovó Tereza foi configurada com sucesso.',
+    });
     if (validation.error)
       return NextResponse.json(
         {
           error:
-            'A Resend recusou essa chave. Confirme a credencial e tente novamente.',
+            'A Resend recusou o envio de validação. Confira a chave e o domínio do remetente.',
         },
         { status: 400 },
       );

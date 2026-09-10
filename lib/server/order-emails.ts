@@ -21,10 +21,12 @@ export async function sendOrderEmails(input: {
   const { credentials } = await resolveResendCredentials();
   if (!credentials) return;
 
-  const siteUrl = (env.NEXT_PUBLIC_SITE_URL || input.requestOrigin).replace(
-    /\/$/,
-    '',
-  );
+  const siteUrl = (
+    env.NEXT_PUBLIC_SITE_URL ||
+    (env.NODE_ENV === 'production'
+      ? 'https://www.receitasdavovotereza.site'
+      : input.requestOrigin)
+  ).replace(/\/$/, '');
   const resend = new Resend(credentials.apiKey);
   const from = `${credentials.fromName} <${credentials.fromEmail}>`;
   const replyTo = credentials.replyTo || undefined;
