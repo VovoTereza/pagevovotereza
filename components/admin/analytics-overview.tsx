@@ -76,7 +76,7 @@ export function AnalyticsOverview() {
   useEffect(() => {
     queueMicrotask(() => void load());
     const liveTimer = window.setInterval(() => { if (document.visibilityState === 'visible') void loadLive(); }, 2000);
-    const totalsTimer = window.setInterval(() => { if (document.visibilityState === 'visible') void load(true); }, 30000);
+    const totalsTimer = window.setInterval(() => { if (document.visibilityState === 'visible') void load(true); }, 10000);
     return () => { window.clearInterval(liveTimer); window.clearInterval(totalsTimer); };
   }, [load, loadLive]);
   const copyLink = async (label: string, source: string, medium: string) => {
@@ -88,9 +88,9 @@ export function AnalyticsOverview() {
     setCopied(label);
     window.setTimeout(() => setCopied((current) => current === label ? '' : current), 1800);
   };
-  const base = Math.max(data.funnel.find((item) => item.name === 'Acessaram')?.value || 0, 1);
+  const base = Math.max(data.kpis.uniqueVisitors, data.funnel.find((item) => item.name === 'Acessaram')?.value || 0, 1);
   const cards: Array<{ label: string; value: string | number; note: string; Icon: LucideIcon }> = [
-    { label: 'Visitantes únicos', value: data.kpis.uniqueVisitors, note: 'Sessões distintas no período', Icon: Eye },
+    { label: 'Visitantes únicos', value: data.kpis.uniqueVisitors, note: 'Navegadores distintos no período', Icon: Eye },
     { label: 'Carrinhos abertos', value: data.kpis.cartOpens, note: `${Math.round((data.kpis.cartOpens / base) * 100)}% dos acessos`, Icon: ShoppingCart },
     { label: 'Checkouts iniciados', value: data.kpis.checkoutStarts, note: `${Math.round((data.kpis.checkoutStarts / base) * 100)}% dos acessos`, Icon: WalletCards },
     { label: 'Compras confirmadas', value: data.kpis.purchases, note: 'Somente pagamentos aprovados', Icon: MousePointerClick },
