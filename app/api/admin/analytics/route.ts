@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
       range, updatedAt: new Date().toISOString(),
       kpis: { uniqueVisitors: visitors.size, pageViews: events.filter((event) => event.name === 'page_view').length, cartOpens: counts('cart_open'), checkoutStarts: counts('checkout_started'), purchases: paid.length, revenue: paid.reduce((sum, order) => sum + Number(order.total || 0), 0), activeNow: live.length },
       funnel: [
-        ['Acessaram', counts('page_view')], ['Abriram o carrinho', counts('cart_open')], ['Adicionaram coleção', counts('bundle_add_to_cart')],
+        ['Acessaram', visitors.size], ['Abriram o carrinho', counts('cart_open')], ['Adicionaram coleção', counts('bundle_add_to_cart')],
         ['Aceitaram bump', counts('order_bump_accept')], ['Recusaram bump', counts('order_bump_reject')], ['Aceitaram oferta', counts('cart_offer_accept')], ['Recusaram oferta', counts('cart_offer_reject')], ['Iniciaram checkout', counts('checkout_started')], ['Compraram', paid.length],
       ].map(([name, value]) => ({ name, value })),
       sources: group('sourceType'), platforms: group('sourcePlatform'), live,
