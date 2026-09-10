@@ -3,7 +3,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Activity, Check, Copy, Eye, MousePointerClick, Radio, RefreshCw, ShoppingCart, WalletCards, type LucideIcon } from 'lucide-react';
 import { Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { LiveVisitorsMap } from './live-visitors-map';
+import dynamic from 'next/dynamic';
+
+const LiveVisitorsMap = dynamic(
+  () =>
+    import('./live-visitors-map').then((module) => module.LiveVisitorsMap),
+  {
+    ssr: false,
+    loading: () => (
+      <output className="analytics-map-loading">
+        Carregando mapa ao vivo…
+      </output>
+    ),
+  },
+);
 
 type Slice = { name: string; value: number };
 type LiveVisitor = { sessionId: string; lastSeenAt: string; lastActionAt: string; path: string; sourceType: string; sourcePlatform: string; city: string; region: string; country: string; latitude: number | null; longitude: number | null; device: string; browser: string; lastEvent: string };

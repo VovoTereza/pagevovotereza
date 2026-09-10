@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import {
   useEffect,
   useMemo,
@@ -46,8 +47,12 @@ import {
   IconsaxYoutube,
 } from './social-icons';
 import { BrandLogo } from '@/components/brand-logo';
-import { EmbeddedStripeCheckout } from './embedded-stripe-checkout';
-import { defaultCatalog, defaultSiteConfig, formatMoney } from '@/lib/catalog';
+import {
+  defaultCatalog,
+  formatMoney,
+  type CatalogConfig,
+  type PublicSiteConfig,
+} from '@/lib/catalog';
 import { getAnalyticsContext, sendAnalytics } from '@/lib/client/analytics';
 
 type CartLine = {
@@ -95,11 +100,30 @@ const subscribeToEditorPreview = () => () => {};
 const getEditorPreviewSnapshot = () =>
   new URLSearchParams(window.location.search).get('editorPreview') === '1';
 
-export function Storefront() {
+const EmbeddedStripeCheckout = dynamic(
+  () =>
+    import('./embedded-stripe-checkout').then(
+      (module) => module.EmbeddedStripeCheckout,
+    ),
+  { ssr: false },
+);
+
+export function Storefront({
+  initialCatalog,
+  initialConfig,
+}: {
+  initialCatalog: CatalogConfig;
+  initialConfig: PublicSiteConfig;
+}) {
   const reduceMotion = useReducedMotion();
   const commentRailRef = useRef<HTMLDivElement>(null);
   const commentAutoPausedRef = useRef(false);
-  const [selectedBundle, setSelectedBundle] = useState('familia');
+  const [selectedBundle, setSelectedBundle] = useState(
+    () =>
+      initialCatalog.bundles.find((bundle) => bundle.recommended)?.id ||
+      initialCatalog.bundles[0]?.id ||
+      'familia',
+  );
   const [cart, setCart] = useState<CartLine[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -124,19 +148,13 @@ export function Storefront() {
   });
   const [exitStage, setExitStage] = useState(0);
   const [exitOpen, setExitOpen] = useState(false);
-  const [catalog, setCatalog] = useState(defaultCatalog);
+  const [catalog, setCatalog] = useState(initialCatalog);
   const { products, bundles, orderBump, cartOffer, exitOffers, testimonials } =
     catalog;
   const activeTestimonials = testimonials.filter((item) => item.active);
   const getBundle = (id: string) => bundles.find((item) => item.id === id);
   const getProduct = (id: string) => products.find((item) => item.id === id);
-  const [config, setConfig] = useState({
-    ...defaultSiteConfig,
-    keyword: 'babosa',
-    metaPixelId: '',
-    googleAnalyticsId: '',
-    tiktokPixelId: '',
-  });
+  const [config, setConfig] = useState(initialConfig);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -231,25 +249,6 @@ export function Storefront() {
           : savedStage,
       );
     });
-    fetch('/api/site-config')
-      .then((response) => (response.ok ? response.json() : null))
-      .then((value) => value && setConfig(value as typeof config))
-      .catch(() => undefined);
-    fetch('/api/catalog')
-      .then((response) => (response.ok ? response.json() : null))
-      .then((value) => {
-        if (!value) return;
-        const next = value as typeof catalog;
-        setCatalog(next);
-        setSelectedBundle((current) =>
-          next.bundles.some((bundle) => bundle.id === current)
-            ? current
-            : next.bundles.find((bundle) => bundle.recommended)?.id ||
-              next.bundles[0]?.id ||
-              current,
-        );
-      })
-      .catch(() => undefined);
     if (!isEditorPreview) track('page_view');
     if (
       !isEditorPreview &&

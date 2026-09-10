@@ -205,8 +205,8 @@ export const defaultSiteConfig = {
   heroCardSubtitle: 'em cadernos fáceis de consultar',
   urgencyText:
     'Este convite especial da Vovó Tereza é para você · aproveite a oferta',
-  heroImage: '/images/vovo-tereza-cozinha-v2.png',
-  founderImage: '/images/vovo-tereza-caderno-v2.png',
+  heroImage: '/images/vovo-tereza-cozinha-v2.jpg',
+  founderImage: '/images/vovo-tereza-caderno-v2.jpg',
   cartBannerEmpty: '',
   cartBannerFilled: '',
   proofItems: [
@@ -375,6 +375,12 @@ export const defaultSiteConfig = {
     'Receitas tradicionais de autocuidado, babosa para os cabelos e chás organizados em cadernos digitais.',
 };
 export type SiteConfig = typeof defaultSiteConfig;
+export type PublicSiteConfig = SiteConfig & {
+  keyword: string;
+  metaPixelId: string;
+  googleAnalyticsId: string;
+  tiktokPixelId: string;
+};
 
 export const formatMoney = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(

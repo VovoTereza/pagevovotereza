@@ -51,7 +51,20 @@ import {
   useState,
 } from 'react';
 import Image from 'next/image';
-import { AnalyticsOverview } from './analytics-overview';
+import dynamic from 'next/dynamic';
+
+const AnalyticsOverview = dynamic(
+  () =>
+    import('./analytics-overview').then((module) => module.AnalyticsOverview),
+  {
+    ssr: false,
+    loading: () => (
+      <output className="admin-overview is-loading">
+        <div className="analytics-card">Carregando visão geral…</div>
+      </output>
+    ),
+  },
+);
 
 type Config = SiteConfig & {
   keyword: string;
@@ -596,15 +609,55 @@ export function AdminDashboard({
     await fetch('/api/admin/login', { method: 'DELETE' });
     window.location.assign('/admin/login');
   }
+  async function optimizeImage(file: File) {
+    if (!file.type.startsWith('image/')) return file;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const maximumEdge = 2000;
+      const scale = Math.min(
+        1,
+        maximumEdge / Math.max(bitmap.width, bitmap.height),
+      );
+      if (scale === 1 && file.size <= 500 * 1024) {
+        bitmap.close();
+        return file;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) {
+        bitmap.close();
+        return file;
+      }
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, 'image/webp', 0.84),
+      );
+      if (!blob || blob.size >= file.size) return file;
+      return new File(
+        [blob],
+        `${file.name.replace(/\.[^.]+$/, '') || 'imagem'}.webp`,
+        { type: 'image/webp', lastModified: file.lastModified },
+      );
+    } catch {
+      return file;
+    }
+  }
   async function upload(
     file: File,
     kind: 'cover' | 'deliverable',
     productId: string,
   ) {
     setSaving(true);
-    setMessage(`Enviando ${kind === 'cover' ? 'imagem' : 'entregável'}...`);
+    setMessage(
+      kind === 'cover' ? 'Otimizando imagem...' : 'Enviando entregável...',
+    );
+    const uploadFile = kind === 'cover' ? await optimizeImage(file) : file;
+    if (kind === 'cover') setMessage('Enviando imagem otimizada...');
     const body = new FormData();
-    body.set('file', file);
+    body.set('file', uploadFile);
     body.set('kind', kind);
     body.set('productId', productId);
     const response = await fetch('/api/admin/upload', { method: 'POST', body });

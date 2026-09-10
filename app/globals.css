@@ -6561,6 +6561,14 @@ footer .brand-logo {
 .analytics-card-heading b { gap: 7px; color: var(--sage); font-size: 10px; letter-spacing: .08em; white-space: nowrap; }
 .analytics-card-heading b svg { display: none; }
 .analytics-map-card { padding-bottom: 20px; }
+.analytics-map-loading {
+  min-height: 390px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: #17231d;
+  border-radius: 14px;
+}
 .analytics-map {
   position: relative;
   height: 430px;

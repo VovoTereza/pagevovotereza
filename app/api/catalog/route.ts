@@ -64,7 +64,12 @@ const catalogSchema = z.object({
 });
 
 export async function GET() {
-  return NextResponse.json(await getCatalogConfig());
+  return NextResponse.json(await getCatalogConfig(), {
+    headers: {
+      'cache-control':
+        'public, max-age=0, s-maxage=30, stale-while-revalidate=300',
+    },
+  });
 }
 
 export async function PUT(request: NextRequest) {

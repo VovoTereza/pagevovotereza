@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { defaultSiteConfig } from '@/lib/catalog';
 import { getAdminEmail } from '@/lib/server/admin-auth';
-import { selectRows, upsertRows } from '@/lib/server/supabase';
+import { getSiteConfig } from '@/lib/server/site-config';
+import { upsertRows } from '@/lib/server/supabase';
 
 const optionalUrl = z.string().max(300).refine(
   (value) => !value || URL.canParse(value),
@@ -114,29 +114,12 @@ const schema = z.object({
 });
 
 export async function GET() {
-  try {
-    const [row] = await selectRows<{ value: object }>('site_settings', {
-      key: 'eq.public_config',
-      select: 'value',
-      limit: 1,
-    });
-    return NextResponse.json({
-      ...defaultSiteConfig,
-      keyword: 'babosa',
-      metaPixelId: '',
-      googleAnalyticsId: '',
-      tiktokPixelId: '',
-      ...((row?.value || {}) as object),
-    });
-  } catch {
-    return NextResponse.json({
-      ...defaultSiteConfig,
-      keyword: 'babosa',
-      metaPixelId: '',
-      googleAnalyticsId: '',
-      tiktokPixelId: '',
-    });
-  }
+  return NextResponse.json(await getSiteConfig(), {
+    headers: {
+      'cache-control':
+        'public, max-age=0, s-maxage=30, stale-while-revalidate=300',
+    },
+  });
 }
 
 export async function PUT(request: NextRequest) {

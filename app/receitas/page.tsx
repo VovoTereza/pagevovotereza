@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
 import { Storefront } from '@/components/store/storefront';
+import { getCatalogConfig } from '@/lib/server/catalog-config';
+import { getSiteConfig } from '@/lib/server/site-config';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   alternates: { canonical: '/receitas' },
@@ -20,6 +24,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ReceitasPage() {
-  return <Storefront />;
+export default async function ReceitasPage() {
+  const [initialConfig, initialCatalog] = await Promise.all([
+    getSiteConfig(),
+    getCatalogConfig(),
+  ]);
+  return (
+    <Storefront
+      initialConfig={initialConfig}
+      initialCatalog={initialCatalog}
+    />
+  );
 }

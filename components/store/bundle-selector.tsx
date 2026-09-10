@@ -277,7 +277,7 @@ export function BundleSelector({
                             <Image
                               src={
                                 product.coverImage ||
-                                '/images/vovo-tereza-caderno-v2.png'
+                                '/images/vovo-tereza-caderno-v2.jpg'
                               }
                               alt=""
                               width={54}

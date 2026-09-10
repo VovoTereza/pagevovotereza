@@ -14,7 +14,15 @@ export async function GET(request: NextRequest) {
   return new Response(object.body, {
     headers: {
       'content-type': object.headers.get('content-type') || 'application/octet-stream',
-      'cache-control': 'public, max-age=3600',
+      'cache-control':
+        'public, max-age=31536000, s-maxage=31536000, immutable',
+      'cdn-cache-control': 'public, max-age=31536000, immutable',
+      ...(object.headers.get('etag')
+        ? { etag: object.headers.get('etag')! }
+        : {}),
+      ...(object.headers.get('last-modified')
+        ? { 'last-modified': object.headers.get('last-modified')! }
+        : {}),
     },
   });
 }
