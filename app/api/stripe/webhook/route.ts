@@ -97,6 +97,19 @@ async function completeCheckout(
     }
   }
   if (rows.length) await insertRows('order_items', rows);
+  await insertRows('analytics_events', {
+    id: crypto.randomUUID(),
+    name: 'purchase_completed',
+    session_id: session.metadata?.analyticsSessionId || null,
+    order_id: orderId,
+    payload: {
+      visitorId: session.metadata?.analyticsVisitorId || '',
+      total,
+      currency: (session.currency || 'brl').toUpperCase(),
+      itemCount: rows.length,
+    },
+    created_at: new Date().toISOString(),
+  }).catch((error) => console.error('purchase_analytics_write_failed', error));
   await sendOrderEmails({
     customerEmail: email,
     customerName: name,

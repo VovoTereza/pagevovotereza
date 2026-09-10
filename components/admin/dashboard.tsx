@@ -47,11 +47,11 @@ import {
   SyntheticEvent,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
 import Image from 'next/image';
+import { AnalyticsOverview } from './analytics-overview';
 
 type Config = SiteConfig & {
   keyword: string;
@@ -248,8 +248,6 @@ const slugify = (value: string) =>
 export function AdminDashboard({
   initialConfig,
   initialCatalog,
-  orderCount,
-  revenue,
   recentOrders,
 }: {
   initialConfig: Config;
@@ -300,11 +298,6 @@ export function AdminDashboard({
   const previewFrameRef = useRef<HTMLDivElement>(null);
   const [desktopPreviewScale, setDesktopPreviewScale] = useState(1);
   const [desktopPreviewHeight, setDesktopPreviewHeight] = useState(700);
-  const activeProducts = useMemo(
-    () => catalog.products.filter((product) => product.active).length,
-    [catalog.products],
-  );
-
   function selectEditorField(field: EditorField) {
     const sectionByField: Record<EditorField, EditorSection> = {
       urgencyText: 'offer',
@@ -919,56 +912,7 @@ export function AdminDashboard({
         )}
 
         {active === 'Visão geral' && (
-          <>
-            <div className="metric-grid">
-              <article>
-                <CircleDollarSign />
-                <span>Receita confirmada</span>
-                <strong>{money(revenue)}</strong>
-                <small>Somente pedidos pagos</small>
-              </article>
-              <article>
-                <ShoppingCart />
-                <span>Pedidos</span>
-                <strong>{orderCount}</strong>
-                <small>Registros no banco</small>
-              </article>
-              <article>
-                <Package />
-                <span>Produtos ativos</span>
-                <strong>{activeProducts}</strong>
-                <small>{catalog.products.length} cadastrados</small>
-              </article>
-              <article>
-                <Users />
-                <span>Provas publicadas</span>
-                <strong>
-                  {catalog.testimonials.filter((item) => item.active).length}
-                </strong>
-                <small>Somente registros autorizados</small>
-              </article>
-            </div>
-            <section className="admin-section">
-              <h2>Operação da loja</h2>
-              <div className="admin-checklist">
-                <p>
-                  <CheckCircle2 /> Catálogo, bundles e ofertas editáveis
-                </p>
-                <p>
-                  <CheckCircle2 /> Capas e PDFs enviados ao armazenamento
-                  privado
-                </p>
-                <p>
-                  <CheckCircle2 /> Pedidos e receita sincronizados com
-                  pagamentos
-                </p>
-                <p>
-                  <CheckCircle2 /> Conteúdo, SEO, pixels e provas sociais
-                  centralizados
-                </p>
-              </div>
-            </section>
-          </>
+          <AnalyticsOverview />
         )}
 
         {active === 'Pedidos' && (

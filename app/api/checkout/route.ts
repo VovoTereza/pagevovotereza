@@ -3,9 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCatalogConfig } from '@/lib/server/catalog-config';
 import { getStripe } from '@/lib/server/stripe';
-import { insertRows } from '@/lib/server/supabase';
+import { insertRows, updateRows } from '@/lib/server/supabase';
 
 const requestSchema = z.object({
+  sessionId: z.uuid().optional(),
+  visitorId: z.uuid().optional(),
   items: z
     .array(
       z.object({
@@ -105,6 +107,8 @@ export async function POST(request: NextRequest) {
           orderId,
           orderNumber,
           cart: JSON.stringify(parsed.data.items),
+          analyticsSessionId: parsed.data.sessionId || '',
+          analyticsVisitorId: parsed.data.visitorId || '',
         },
         line_items: resolved.map((item) => ({
           quantity: item.quantity,
@@ -125,7 +129,11 @@ export async function POST(request: NextRequest) {
       },
       { idempotencyKey: request.headers.get('x-idempotency-key') || orderId },
     );
-    return NextResponse.json({ url: session.url });
+    await updateRows('orders', { id: `eq.${orderId}` }, {
+      stripe_checkout_session_id: session.id,
+      updated_at: new Date().toISOString(),
+    }).catch((error) => console.error('checkout_session_link_failed', error));
+    return NextResponse.json({ url: session.url, orderId });
   } catch (error) {
     return NextResponse.json(
       {

@@ -47,6 +47,7 @@ import {
 } from './social-icons';
 import { BrandLogo } from '@/components/brand-logo';
 import { defaultCatalog, defaultSiteConfig, formatMoney } from '@/lib/catalog';
+import { getAnalyticsContext, sendAnalytics } from '@/lib/client/analytics';
 
 type CartLine = {
   kind: 'bundle' | 'product';
@@ -73,16 +74,7 @@ function track(name: string, data: Record<string, unknown> = {}) {
   win.dataLayer?.push({ event: name, ...data });
   win.fbq?.('trackCustom', name, data);
   win.ttq?.track(name, data);
-  const body = JSON.stringify({
-    name,
-    payload: data,
-    sessionId: sessionStorage.getItem('vovo-session') || '',
-  });
-  if (navigator.sendBeacon)
-    navigator.sendBeacon(
-      '/api/analytics',
-      new Blob([body], { type: 'application/json' }),
-    );
+  sendAnalytics(name, data);
 }
 
 function cartCoverLabel(productName: string) {
@@ -210,8 +202,7 @@ export function Storefront() {
   }, [bundles, exitOffers.length, isEditorPreview]);
 
   useEffect(() => {
-    if (!sessionStorage.getItem('vovo-session'))
-      sessionStorage.setItem('vovo-session', crypto.randomUUID());
+    getAnalyticsContext();
     const saved = localStorage.getItem('vovo-cart');
     const savedStage = Number(sessionStorage.getItem('vovo-exit-stage') || 0);
     const previewStage = Number(
@@ -250,8 +241,27 @@ export function Storefront() {
         );
       })
       .catch(() => undefined);
-    track('page_view');
-  }, []);
+    if (!isEditorPreview) track('page_view');
+    if (!isEditorPreview && new URLSearchParams(window.location.search).get('checkout') === 'cancelado')
+      track('checkout_cancelled');
+  }, [isEditorPreview]);
+  useEffect(() => {
+    if (isEditorPreview) return;
+    const heartbeat = () => {
+      if (document.visibilityState === 'visible') sendAnalytics('session_heartbeat');
+    };
+    const visibility = () => sendAnalytics(document.visibilityState === 'visible' ? 'session_resume' : 'session_hidden');
+    const leave = () => sendAnalytics('session_end');
+    const timer = window.setInterval(heartbeat, 10000);
+    document.addEventListener('visibilitychange', visibility);
+    window.addEventListener('pagehide', leave);
+    heartbeat();
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', visibility);
+      window.removeEventListener('pagehide', leave);
+    };
+  }, [isEditorPreview]);
   useEffect(() => {
     localStorage.setItem('vovo-cart', JSON.stringify(cart));
   }, [cart]);
@@ -313,7 +323,10 @@ export function Storefront() {
   useEffect(() => {
     if (!drawerOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setDrawerOpen(false);
+      if (event.key === 'Escape') {
+        setDrawerOpen(false);
+        track('cart_close', { method: 'escape' });
+      }
     };
     document.addEventListener('keydown', closeOnEscape);
     return () => document.removeEventListener('keydown', closeOnEscape);
@@ -429,12 +442,18 @@ export function Storefront() {
     if (!cart.length || checkingOut) return;
     setCheckingOut(true);
     setCheckoutError('');
-    track('checkout_started');
+    const acceptedBump = cart.some((line) => line.source === 'order_bump');
+    const acceptedOffer = cart.some((line) => line.source === 'cart_offer');
+    if (!acceptedBump) track('order_bump_reject', { productId: orderBump.productId });
+    if (!acceptedOffer) track('cart_offer_reject', { productId: cartOffer.productId });
+    track('checkout_started', { total: subtotal, itemCount: cart.length, acceptedBump, acceptedOffer });
     try {
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
+          sessionId: getAnalyticsContext().sessionId,
+          visitorId: getAnalyticsContext().visitorId,
           items: cart.map(({ kind, id, quantity, source, offerStage }) => ({
             kind,
             id,
@@ -1188,7 +1207,7 @@ export function Storefront() {
             <motion.button
               className="drawer-backdrop"
               aria-label="Fechar carrinho"
-              onClick={() => setDrawerOpen(false)}
+              onClick={() => { setDrawerOpen(false); track('cart_close', { method: 'backdrop' }); }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1233,7 +1252,7 @@ export function Storefront() {
                 )}
                 <button
                   className="icon-button"
-                  onClick={() => setDrawerOpen(false)}
+                  onClick={() => { setDrawerOpen(false); track('cart_close', { method: 'button' }); }}
                   aria-label="Fechar carrinho"
                 >
                   <X />
@@ -1251,7 +1270,7 @@ export function Storefront() {
                   <p>{config.cartEmptyText}</p>
                   <button
                     className="primary-button"
-                    onClick={() => setDrawerOpen(false)}
+                    onClick={() => { setDrawerOpen(false); track('cart_close', { method: 'empty_cta' }); }}
                   >
                     {config.cartEmptyCtaText}
                   </button>
@@ -1333,11 +1352,12 @@ export function Storefront() {
                               </span>
                             )}
                             <button
-                              onClick={() =>
+                              onClick={() => {
                                 setCart((current) =>
                                   current.filter((_, i) => i !== index),
-                                )
-                              }
+                                );
+                                track('cart_item_removed', { id: line.id, kind: line.kind, source: line.source || 'catalog' });
+                              }}
                             >
                               {config.cartRemoveText}
                             </button>
@@ -1619,6 +1639,7 @@ export function Storefront() {
                       'vovo-exit-stage',
                       String(exitStage),
                     );
+                    track(`exit_offer_${exitStage}_decline`);
                   }}
                 >
                   Não, quero continuar navegando
