@@ -3607,16 +3607,19 @@ footer .brand-logo {
   font-size: 15px;
 }
 .customer-stories-rail {
-  overflow: hidden;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
 }
 .customer-stories-track {
   display: flex;
-  width: max-content;
-  will-change: transform;
-  animation: customer-stories-scroll 28s linear infinite;
+  min-width: 100%;
 }
 .customer-stories-group {
   display: flex;
+  justify-content: center;
+  width: max-content;
+  min-width: 100%;
   gap: 14px;
   padding: 4px 14px 20px 2px;
 }
@@ -3660,12 +3663,6 @@ footer .brand-logo {
   line-height: 1.35;
 }
 
-@keyframes customer-stories-scroll {
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
 @media (max-width: 760px) {
   .customer-stories {
     margin-top: 48px;
@@ -3678,10 +3675,8 @@ footer .brand-logo {
   .customer-stories-rail {
     margin-inline: -16px;
   }
-  .customer-stories-track {
-    animation-duration: 20s;
-  }
   .customer-stories-group {
+    justify-content: flex-start;
     padding-inline: 16px 0;
     gap: 14px;
   }
@@ -3691,17 +3686,8 @@ footer .brand-logo {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .customer-stories-rail {
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    scrollbar-width: thin;
-  }
   .customer-stories-track {
-    animation: none;
     transform: none;
-  }
-  .customer-stories-group[aria-hidden='true'] {
-    display: none;
   }
 }
 
@@ -4206,9 +4192,6 @@ footer .brand-logo {
   margin: 0;
   font-size: 21px;
   line-height: 1.2;
-}
-.customer-stories.compact .customer-stories-track {
-  animation-duration: 16s;
 }
 .customer-stories.compact .customer-stories-group {
   gap: 10px;

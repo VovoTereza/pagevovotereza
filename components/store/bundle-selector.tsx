@@ -73,6 +73,13 @@ export function CustomerStories({
     { length: compact ? 4 : 5 },
     (_, index) => index,
   );
+  const uniqueStories = Array.from(
+    new Map(
+      stories
+        .filter((story) => story.src.trim())
+        .map((story) => [story.src.trim(), story]),
+    ).values(),
+  );
   const titleId = compact
     ? 'cart-customer-stories-title'
     : 'customer-stories-title';
@@ -89,38 +96,29 @@ export function CustomerStories({
       </div>
       <div className="customer-stories-rail" data-editor-field="gallery">
         <div className="customer-stories-track">
-          {[false, true].map((isDuplicate) => (
-            <div
-              className="customer-stories-group"
-              aria-hidden={isDuplicate || undefined}
-              key={isDuplicate ? 'duplicate' : 'original'}
-            >
-              {stories.length > 0
-                ? stories.map((story) => (
-                    <figure
-                      className="customer-story"
-                      key={`${isDuplicate ? 'duplicate' : 'original'}-${story.src}`}
-                    >
-                      <Image
-                        src={story.src}
-                        alt={isDuplicate ? '' : story.alt}
-                        fill
-                        sizes="(max-width: 600px) 44vw, 180px"
-                      />
-                    </figure>
-                  ))
-                : emptySlots.map((slot) => (
-                    <div
-                      className="customer-story customer-story-placeholder"
-                      key={slot}
-                      aria-label="Espaço reservado para foto autorizada de cliente"
-                    >
-                      <ImagePlus aria-hidden="true" />
-                      <span>Foto autorizada</span>
-                    </div>
-                  ))}
-            </div>
-          ))}
+          <div className="customer-stories-group">
+            {uniqueStories.length > 0
+              ? uniqueStories.map((story) => (
+                  <figure className="customer-story" key={story.src}>
+                    <Image
+                      src={story.src}
+                      alt={story.alt}
+                      fill
+                      sizes="(max-width: 600px) 44vw, 180px"
+                    />
+                  </figure>
+                ))
+              : emptySlots.map((slot) => (
+                  <div
+                    className="customer-story customer-story-placeholder"
+                    key={slot}
+                    aria-label="Espaço reservado para foto autorizada de cliente"
+                  >
+                    <ImagePlus aria-hidden="true" />
+                    <span>Foto autorizada</span>
+                  </div>
+                ))}
+          </div>
         </div>
       </div>
     </section>
