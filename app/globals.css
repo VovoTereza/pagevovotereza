@@ -3619,6 +3619,7 @@ footer .brand-logo {
 }
 .customer-stories-group {
   display: flex;
+  flex: 0 0 max-content;
   justify-content: center;
   width: max-content;
   min-width: 100%;
@@ -3642,7 +3643,9 @@ footer .brand-logo {
 }
 .customer-story {
   position: relative;
-  flex: 0 0 clamp(154px, 17vw, 190px);
+  --customer-story-width: clamp(154px, 17vw, 190px);
+  flex: 0 0 var(--customer-story-width);
+  width: var(--customer-story-width);
   aspect-ratio: 9/16;
   min-width: 0;
   margin: 0;
@@ -3705,7 +3708,7 @@ footer .brand-logo {
     gap: 12px;
   }
   .customer-story {
-    flex-basis: clamp(76px, 21vw, 104px);
+    --customer-story-width: clamp(76px, 21vw, 104px);
     aspect-ratio: 9 / 14;
     border-radius: 13px;
   }
@@ -4234,7 +4237,7 @@ footer .brand-logo {
   padding: 2px 10px 5px 2px;
 }
 .customer-stories.compact .customer-story {
-  flex-basis: 76px;
+  --customer-story-width: 76px;
   border-radius: 11px;
   box-shadow:
     0 0 0 1px var(--terracotta),
