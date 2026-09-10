@@ -3708,9 +3708,9 @@ footer .brand-logo {
     gap: 12px;
   }
   .customer-story {
-    --customer-story-width: clamp(76px, 21vw, 104px);
+    --customer-story-width: clamp(116px, 34vw, 144px);
     aspect-ratio: 9 / 14;
-    border-radius: 13px;
+    border-radius: 16px;
   }
 }
 
