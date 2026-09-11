@@ -9,6 +9,19 @@ import { insertRows, updateRows } from '@/lib/server/supabase';
 const requestSchema = z.object({
   sessionId: z.uuid().optional(),
   visitorId: z.uuid().optional(),
+  attribution: z
+    .object({
+      sourceType: z.enum(['paid', 'organic', 'direct', 'referral']),
+      sourcePlatform: z.string().max(100),
+      utmSource: z.string().max(200),
+      utmMedium: z.string().max(200),
+      utmCampaign: z.string().max(200),
+      utmContent: z.string().max(200),
+      utmTerm: z.string().max(200),
+      landingUrl: z.string().max(500),
+      referrer: z.string().max(300),
+    })
+    .optional(),
   items: z
     .array(
       z.object({
@@ -117,6 +130,15 @@ export async function POST(request: NextRequest) {
           cart: JSON.stringify(parsed.data.items),
           analyticsSessionId: parsed.data.sessionId || '',
           analyticsVisitorId: parsed.data.visitorId || '',
+          sourceType: parsed.data.attribution?.sourceType || '',
+          sourcePlatform: parsed.data.attribution?.sourcePlatform || '',
+          utmSource: parsed.data.attribution?.utmSource || '',
+          utmMedium: parsed.data.attribution?.utmMedium || '',
+          utmCampaign: parsed.data.attribution?.utmCampaign || '',
+          utmContent: parsed.data.attribution?.utmContent || '',
+          utmTerm: parsed.data.attribution?.utmTerm || '',
+          landingUrl: parsed.data.attribution?.landingUrl || '',
+          referrer: parsed.data.attribution?.referrer || '',
         },
         line_items: resolved.map((item) => ({
           quantity: item.quantity,

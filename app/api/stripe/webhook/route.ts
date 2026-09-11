@@ -17,6 +17,7 @@ async function completeCheckout(
   session: Stripe.Checkout.Session,
   requestOrigin: string,
 ) {
+  if (session.payment_status !== 'paid') return;
   const { products, bundles, orderBump, cartOffer } = await getCatalogConfig();
   const getBundle = (id: string) => bundles.find((item) => item.id === id);
   const getProduct = (id: string) => products.find((item) => item.id === id);
@@ -107,6 +108,15 @@ async function completeCheckout(
       total,
       currency: (session.currency || 'brl').toUpperCase(),
       itemCount: rows.length,
+      sourceType: session.metadata?.sourceType || 'direct',
+      sourcePlatform: session.metadata?.sourcePlatform || 'Direto',
+      utmSource: session.metadata?.utmSource || '',
+      utmMedium: session.metadata?.utmMedium || '',
+      utmCampaign: session.metadata?.utmCampaign || '',
+      utmContent: session.metadata?.utmContent || '',
+      utmTerm: session.metadata?.utmTerm || '',
+      landingUrl: session.metadata?.landingUrl || '',
+      referrer: session.metadata?.referrer || '',
     },
     created_at: new Date().toISOString(),
   }).catch((error) => console.error('purchase_analytics_write_failed', error));
@@ -155,7 +165,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true, duplicate: true });
   }
   if (
-    event.type === 'checkout.session.completed' ||
+    (event.type === 'checkout.session.completed' &&
+      event.data.object.payment_status === 'paid') ||
     event.type === 'checkout.session.async_payment_succeeded'
   )
     await completeCheckout(event.data.object, request.nextUrl.origin);

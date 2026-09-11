@@ -55,6 +55,11 @@ import {
   type StorefrontSectionId,
 } from '@/lib/catalog';
 import { getAnalyticsContext, sendAnalytics } from '@/lib/client/analytics';
+import {
+  MarketingPixels,
+  trackMarketingEvent,
+  type MarketingEventName,
+} from '@/components/tracking/marketing-pixels';
 
 type CartLine = {
   kind: 'bundle' | 'product';
@@ -79,15 +84,17 @@ function track(name: string, data: Record<string, unknown> = {}) {
       detail: { name, data, at: Date.now() },
     }),
   );
-  const win = window as typeof window & {
-    dataLayer?: unknown[];
-    fbq?: (...args: unknown[]) => void;
-    ttq?: { track: (...args: unknown[]) => void };
-  };
-  win.dataLayer?.push({ event: name, ...data });
-  win.fbq?.('trackCustom', name, data);
-  win.ttq?.track(name, data);
   sendAnalytics(name, data);
+  if (
+    [
+      'page_view',
+      'bundle_add_to_cart',
+      'order_bump_accept',
+      'cart_offer_accept',
+      'checkout_started',
+    ].includes(name)
+  )
+    trackMarketingEvent(name as MarketingEventName, data);
 }
 
 function cartCoverLabel(productName: string) {
@@ -431,7 +438,12 @@ export function Storefront({
     ]);
     openCart();
     setExitOpen(false);
-    track('bundle_add_to_cart', { bundleId: bundle.id });
+    track('bundle_add_to_cart', {
+      bundleId: bundle.id,
+      price,
+      content_ids: bundle.productIds,
+      content_type: 'product',
+    });
   }
   function addProduct(
     id: string,
@@ -454,7 +466,7 @@ export function Storefront({
     ]);
     track(
       id === orderBump.productId ? 'order_bump_accept' : 'cart_offer_accept',
-      { productId: id },
+      { productId: id, price, content_ids: [id], content_type: 'product' },
     );
   }
   async function checkout() {
@@ -474,12 +486,24 @@ export function Storefront({
       acceptedOffer,
     });
     try {
+      const analytics = getAnalyticsContext();
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          sessionId: getAnalyticsContext().sessionId,
-          visitorId: getAnalyticsContext().visitorId,
+          sessionId: analytics.sessionId,
+          visitorId: analytics.visitorId,
+          attribution: {
+            sourceType: analytics.sourceType,
+            sourcePlatform: analytics.sourcePlatform,
+            utmSource: analytics.utmSource,
+            utmMedium: analytics.utmMedium,
+            utmCampaign: analytics.utmCampaign,
+            utmContent: analytics.utmContent,
+            utmTerm: analytics.utmTerm,
+            landingUrl: analytics.landingUrl,
+            referrer: analytics.referrer,
+          },
           items: cart.map(({ kind, id, quantity, source, offerStage }) => ({
             kind,
             id,
@@ -572,6 +596,11 @@ export function Storefront({
 
   return (
     <div className="site-shell">
+      <MarketingPixels
+        metaPixelId={config.metaPixelId}
+        googleAnalyticsId={config.googleAnalyticsId}
+        tiktokPixelId={config.tiktokPixelId}
+      />
       <a href="#conteudo" className="skip-link">
         Pular para o conteúdo
       </a>
