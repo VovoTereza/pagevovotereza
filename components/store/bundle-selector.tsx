@@ -145,6 +145,7 @@ export function BundleSelector({
   onChange,
   onBuy,
   content,
+  showCustomerStories = true,
 }: {
   bundles: Bundle[];
   products: Product[];
@@ -165,6 +166,7 @@ export function BundleSelector({
     galleryTitle: string;
     cartGalleryTitle: string;
   };
+  showCustomerStories?: boolean;
 }) {
   const chosen = bundles.find((item) => item.id === value) || bundles[0]!;
   const getProduct = (id: string) => products.find((item) => item.id === id);
@@ -344,20 +346,25 @@ export function BundleSelector({
           note={content.paymentNote}
           securityText={content.paymentSecurityText}
         />
-        <CustomerStories
-          eyebrow={content.galleryEyebrow}
-          title={content.galleryTitle}
-          compactTitle={content.cartGalleryTitle}
-          stories={[
-            ...customerPhotos.map((item) => ({ src: item.src, alt: item.alt })),
-            ...testimonials
-              .filter((item) => item.active && item.photo)
-              .map((item) => ({
-                src: item.photo!,
-                alt: `${item.name}${item.city ? `, ${item.city}` : ''}`,
+        {showCustomerStories && (
+          <CustomerStories
+            eyebrow={content.galleryEyebrow}
+            title={content.galleryTitle}
+            compactTitle={content.cartGalleryTitle}
+            stories={[
+              ...customerPhotos.map((item) => ({
+                src: item.src,
+                alt: item.alt,
               })),
-          ]}
-        />
+              ...testimonials
+                .filter((item) => item.active && item.photo)
+                .map((item) => ({
+                  src: item.photo!,
+                  alt: `${item.name}${item.city ? `, ${item.city}` : ''}`,
+                })),
+            ]}
+          />
+        )}
       </div>
     </div>
   );

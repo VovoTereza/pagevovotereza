@@ -7,6 +7,9 @@ import {
   getBundle,
   getProduct,
   orderBump,
+  defaultSiteConfig,
+  storefrontSectionIds,
+  storefrontVisibilityIds,
 } from '../lib/catalog.ts';
 
 test('todos os bundles possuem produtos válidos e economia real', () => {
@@ -33,4 +36,11 @@ test('order bump e cart offer apontam para produtos existentes', () => {
   assert.ok(getProduct(cartOffer.productId));
   assert.ok(orderBump.price < getProduct(orderBump.productId)!.price);
   assert.ok(cartOffer.price < getProduct(cartOffer.productId)!.price);
+});
+
+test('editor inicia com todos os blocos válidos, únicos e visíveis', () => {
+  assert.deepEqual(defaultSiteConfig.pageSectionOrder, [...storefrontSectionIds]);
+  assert.equal(new Set(defaultSiteConfig.pageSectionOrder).size, storefrontSectionIds.length);
+  assert.deepEqual(defaultSiteConfig.hiddenSections, []);
+  assert.ok(storefrontSectionIds.every((id) => storefrontVisibilityIds.includes(id)));
 });

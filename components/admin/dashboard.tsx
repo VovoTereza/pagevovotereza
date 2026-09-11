@@ -11,6 +11,8 @@ import type {
 } from '@/lib/catalog';
 import {
   ArrowLeft,
+  ArrowDown,
+  ArrowUp,
   BarChart3,
   BookOpen,
   Boxes,
@@ -19,6 +21,8 @@ import {
   CircleDollarSign,
   Columns3,
   FileText,
+  Eye,
+  EyeOff,
   ImagePlus,
   Images,
   KeyRound,
@@ -230,6 +234,73 @@ const editorFieldLabels: Record<EditorField, string> = {
   recoveryStage3: 'Terceiro popup de recuperação',
 };
 
+const editorSections = [
+  ['offer', 'Faixa de oferta', Megaphone],
+  ['navigation', 'Menu', Columns3],
+  ['hero', 'Seção principal', ImagePlus],
+  ['proof', 'Faixa de benefícios', CheckCircle2],
+  ['pain', 'Problemas', MessageSquareQuote],
+  ['contents', 'Conteúdos', BookOpen],
+  ['comments', 'Comentários', MessageSquareQuote],
+  ['benefits', 'Benefícios', CheckCircle2],
+  ['story', 'História da Tereza', BookOpen],
+  ['offers', 'Ofertas', CircleDollarSign],
+  ['gallery', 'Fotos de clientes', Images],
+  ['comparison', 'Comparação', Columns3],
+  ['faq', 'Dúvidas', MessageSquareQuote],
+  ['footer', 'Rodapé', FileText],
+  ['cart', 'Carrinho', ShoppingCart],
+  ['recovery', 'Popups de recuperação', Megaphone],
+] as const;
+
+const firstEditorField: Record<EditorSection, EditorField> = {
+  offer: 'urgencyText',
+  navigation: 'navLabels',
+  hero: 'heroBadge',
+  proof: 'proofItems',
+  pain: 'painHeading',
+  contents: 'contentsHeading',
+  comments: 'commentsTitle',
+  benefits: 'benefitsHeading',
+  story: 'founderImage',
+  offers: 'collectionHeading',
+  gallery: 'galleryCopy',
+  comparison: 'comparisonTitle',
+  faq: 'faqHeading',
+  footer: 'footerText',
+  cart: 'cartBannerEmpty',
+  recovery: 'recoveryStage1',
+};
+
+const reorderableEditorSections = new Set<EditorSection>([
+  'hero',
+  'proof',
+  'pain',
+  'contents',
+  'comments',
+  'benefits',
+  'story',
+  'offers',
+  'comparison',
+  'faq',
+]);
+const hideableEditorSections = new Set<EditorSection>([
+  'offer',
+  'navigation',
+  'hero',
+  'proof',
+  'pain',
+  'contents',
+  'comments',
+  'benefits',
+  'story',
+  'offers',
+  'gallery',
+  'comparison',
+  'faq',
+  'footer',
+]);
+
 const nav = [
   ['Visão geral', BarChart3],
   ['Pedidos', ShoppingCart],
@@ -298,7 +369,7 @@ export function AdminDashboard({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [editorSection, setEditorSection] = useState<EditorSection>('hero');
   const [selectedEditorField, setSelectedEditorField] =
-    useState<EditorField | null>(null);
+    useState<EditorField | null>('heroBadge');
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>(
     'desktop',
   );
@@ -381,6 +452,35 @@ export function AdminDashboard({
     } else {
       setPreviewSurface('page');
     }
+  }
+  function selectEditorSection(section: EditorSection) {
+    selectEditorField(firstEditorField[section]);
+  }
+  function moveEditorSection(section: EditorSection, direction: -1 | 1) {
+    if (!reorderableEditorSections.has(section)) return;
+    setConfig((current) => {
+      const order = [...current.pageSectionOrder];
+      const index = order.indexOf(section as (typeof order)[number]);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= order.length)
+        return current;
+      [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
+      return { ...current, pageSectionOrder: order };
+    });
+  }
+  function toggleEditorSection(section: EditorSection) {
+    if (!hideableEditorSections.has(section)) return;
+    setConfig((current) => ({
+      ...current,
+      hiddenSections: current.hiddenSections.includes(
+        section as (typeof current.hiddenSections)[number],
+      )
+        ? current.hiddenSections.filter((item) => item !== section)
+        : [
+            ...current.hiddenSections,
+            section as (typeof current.hiddenSections)[number],
+          ],
+    }));
   }
 
   const updatePreview = useCallback(() => {
@@ -769,20 +869,54 @@ export function AdminDashboard({
   ) => (
     <div className="page-editor-list-fields">
       {config[key].map((value, index) => (
-        <label key={`${key}-${index}`}>
-          {labels[index] || `Item ${index + 1}`}
-          <input
-            value={value}
-            onChange={(event) =>
-              setConfig({
-                ...config,
-                [key]: config[key].map((item, itemIndex) =>
-                  itemIndex === index ? event.target.value : item,
-                ),
-              })
-            }
-          />
-        </label>
+        <div className="page-editor-list-row" key={`${key}-${index}`}>
+          <label>
+            {labels[index] || `Item ${index + 1}`}
+            <input
+              value={value}
+              onChange={(event) =>
+                setConfig({
+                  ...config,
+                  [key]: config[key].map((item, itemIndex) =>
+                    itemIndex === index ? event.target.value : item,
+                  ),
+                })
+              }
+            />
+          </label>
+          <div className="page-editor-item-actions">
+            <button
+              type="button"
+              aria-label={`Mover item ${index + 1} para cima`}
+              disabled={index === 0}
+              onClick={() => {
+                const items = [...config[key]];
+                [items[index - 1], items[index]] = [
+                  items[index],
+                  items[index - 1],
+                ];
+                setConfig({ ...config, [key]: items });
+              }}
+            >
+              <ArrowUp aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label={`Mover item ${index + 1} para baixo`}
+              disabled={index === config[key].length - 1}
+              onClick={() => {
+                const items = [...config[key]];
+                [items[index], items[index + 1]] = [
+                  items[index + 1],
+                  items[index],
+                ];
+                setConfig({ ...config, [key]: items });
+              }}
+            >
+              <ArrowDown aria-hidden="true" />
+            </button>
+          </div>
+        </div>
       ))}
     </div>
   );
@@ -798,6 +932,53 @@ export function AdminDashboard({
       {config[key].map((item, index) => (
         <fieldset key={`${key}-${index}`}>
           <legend>Card {index + 1}</legend>
+          <div className="page-editor-item-actions">
+            <button
+              type="button"
+              aria-label={`Mover card ${index + 1} para cima`}
+              disabled={index === 0}
+              onClick={() => {
+                const items = [...config[key]];
+                [items[index - 1], items[index]] = [
+                  items[index],
+                  items[index - 1],
+                ];
+                setConfig({ ...config, [key]: items });
+              }}
+            >
+              <ArrowUp aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label={`Mover card ${index + 1} para baixo`}
+              disabled={index === config[key].length - 1}
+              onClick={() => {
+                const items = [...config[key]];
+                [items[index], items[index + 1]] = [
+                  items[index + 1],
+                  items[index],
+                ];
+                setConfig({ ...config, [key]: items });
+              }}
+            >
+              <ArrowDown aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label={`Apagar card ${index + 1}`}
+              disabled={config[key].length === 1}
+              onClick={() =>
+                setConfig({
+                  ...config,
+                  [key]: config[key].filter(
+                    (_, itemIndex) => itemIndex !== index,
+                  ),
+                })
+              }
+            >
+              <Trash2 aria-hidden="true" />
+            </button>
+          </div>
           <label>
             Título
             <input
@@ -832,6 +1013,31 @@ export function AdminDashboard({
           </label>
         </fieldset>
       ))}
+      {config[key].length <
+        (key === 'painItems'
+          ? 6
+          : key === 'contentsItems' || key === 'benefitsItems'
+            ? 8
+            : 12) && (
+        <button
+          type="button"
+          className="page-editor-add-item"
+          onClick={() =>
+            setConfig({
+              ...config,
+              [key]: [
+                ...config[key],
+                {
+                  title: 'Novo card',
+                  text: 'Edite este texto para apresentar o conteúdo.',
+                },
+              ],
+            })
+          }
+        >
+          <Plus aria-hidden="true" /> Adicionar card
+        </button>
+      )}
     </div>
   );
   const notice = message && (
@@ -1843,41 +2049,101 @@ export function AdminDashboard({
               className={`page-editor-workspace${selectedEditorField ? ' has-inspector' : ''}`}
             >
               <aside className="page-editor-tree" aria-label="Seções da página">
-                {(
-                  [
-                    ['offer', 'Faixa de oferta', Megaphone],
-                    ['navigation', 'Menu', Columns3],
-                    ['hero', 'Seção principal', ImagePlus],
-                    ['proof', 'Faixa de benefícios', CheckCircle2],
-                    ['pain', 'Problemas', MessageSquareQuote],
-                    ['contents', 'Conteúdos', BookOpen],
-                    ['benefits', 'Benefícios', CheckCircle2],
-                    ['story', 'História da Tereza', BookOpen],
-                    ['offers', 'Ofertas', CircleDollarSign],
-                    ['gallery', 'Fotos de clientes', Images],
-                    ['comparison', 'Comparação', Columns3],
-                    ['comments', 'Comentários', MessageSquareQuote],
-                    ['faq', 'Dúvidas', MessageSquareQuote],
-                    ['footer', 'Rodapé', FileText],
-                    ['cart', 'Carrinho', ShoppingCart],
-                    ['recovery', 'Popups de recuperação', Megaphone],
-                  ] as const
-                ).map(([id, label, Icon]) => (
+                <div className="page-editor-tree-heading">
+                  <div>
+                    <strong>Estrutura da página</strong>
+                    <span>Mova ou oculte blocos com segurança.</span>
+                  </div>
                   <button
                     type="button"
-                    className={editorSection === id ? 'active' : ''}
-                    aria-pressed={editorSection === id}
-                    key={String(id)}
-                    onClick={() => {
-                      setEditorSection(id as EditorSection);
-                      setSelectedEditorField(null);
-                    }}
+                    className="page-editor-reset"
+                    onClick={() =>
+                      setConfig((current) => ({
+                        ...current,
+                        pageSectionOrder: [
+                          'hero',
+                          'proof',
+                          'pain',
+                          'contents',
+                          'comments',
+                          'benefits',
+                          'story',
+                          'offers',
+                          'comparison',
+                          'faq',
+                        ],
+                        hiddenSections: [],
+                      }))
+                    }
                   >
-                    <Icon />
-                    <span>{String(label)}</span>
-                    <ChevronRight />
+                    <RefreshCw aria-hidden="true" /> Restaurar
                   </button>
-                ))}
+                </div>
+                {editorSections.map(([id, label, Icon]) => {
+                  const isHidden = config.hiddenSections.includes(
+                    id as (typeof config.hiddenSections)[number],
+                  );
+                  const orderIndex = config.pageSectionOrder.indexOf(
+                    id as (typeof config.pageSectionOrder)[number],
+                  );
+                  return (
+                    <div
+                      className={`page-editor-section-row${isHidden ? ' is-hidden' : ''}`}
+                      key={id}
+                    >
+                      <button
+                        type="button"
+                        className={`page-editor-section-select${editorSection === id ? ' active' : ''}`}
+                        aria-pressed={editorSection === id}
+                        onClick={() => selectEditorSection(id)}
+                      >
+                        <Icon aria-hidden="true" />
+                        <span>{label}</span>
+                        {isHidden && <small>Oculta</small>}
+                        <ChevronRight aria-hidden="true" />
+                      </button>
+                      <div className="page-editor-section-actions">
+                        {reorderableEditorSections.has(id) && (
+                          <>
+                            <button
+                              type="button"
+                              aria-label={`Mover ${label} para cima`}
+                              disabled={orderIndex <= 0}
+                              onClick={() => moveEditorSection(id, -1)}
+                            >
+                              <ArrowUp aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Mover ${label} para baixo`}
+                              disabled={
+                                orderIndex ===
+                                config.pageSectionOrder.length - 1
+                              }
+                              onClick={() => moveEditorSection(id, 1)}
+                            >
+                              <ArrowDown aria-hidden="true" />
+                            </button>
+                          </>
+                        )}
+                        {hideableEditorSections.has(id) && (
+                          <button
+                            type="button"
+                            aria-label={`${isHidden ? 'Exibir' : 'Ocultar'} ${label}`}
+                            aria-pressed={isHidden}
+                            onClick={() => toggleEditorSection(id)}
+                          >
+                            {isHidden ? (
+                              <Eye aria-hidden="true" />
+                            ) : (
+                              <EyeOff aria-hidden="true" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
                 <div className="page-editor-blocks">
                   {(
                     {
@@ -2733,6 +2999,55 @@ export function AdminDashboard({
                           {config.faqItems.map((item, index) => (
                             <fieldset key={`faq-${index}`}>
                               <legend>Pergunta {index + 1}</legend>
+                              <div className="page-editor-item-actions">
+                                <button
+                                  type="button"
+                                  aria-label={`Mover pergunta ${index + 1} para cima`}
+                                  disabled={index === 0}
+                                  onClick={() => {
+                                    const items = [...config.faqItems];
+                                    [items[index - 1], items[index]] = [
+                                      items[index],
+                                      items[index - 1],
+                                    ];
+                                    setConfig({ ...config, faqItems: items });
+                                  }}
+                                >
+                                  <ArrowUp aria-hidden="true" />
+                                </button>
+                                <button
+                                  type="button"
+                                  aria-label={`Mover pergunta ${index + 1} para baixo`}
+                                  disabled={
+                                    index === config.faqItems.length - 1
+                                  }
+                                  onClick={() => {
+                                    const items = [...config.faqItems];
+                                    [items[index], items[index + 1]] = [
+                                      items[index + 1],
+                                      items[index],
+                                    ];
+                                    setConfig({ ...config, faqItems: items });
+                                  }}
+                                >
+                                  <ArrowDown aria-hidden="true" />
+                                </button>
+                                <button
+                                  type="button"
+                                  aria-label={`Apagar pergunta ${index + 1}`}
+                                  disabled={config.faqItems.length === 1}
+                                  onClick={() =>
+                                    setConfig({
+                                      ...config,
+                                      faqItems: config.faqItems.filter(
+                                        (_, itemIndex) => itemIndex !== index,
+                                      ),
+                                    })
+                                  }
+                                >
+                                  <Trash2 aria-hidden="true" />
+                                </button>
+                              </div>
                               <label>
                                 Pergunta
                                 <input
@@ -2775,6 +3090,27 @@ export function AdminDashboard({
                               </label>
                             </fieldset>
                           ))}
+                          {config.faqItems.length < 12 && (
+                            <button
+                              type="button"
+                              className="page-editor-add-item"
+                              onClick={() =>
+                                setConfig({
+                                  ...config,
+                                  faqItems: [
+                                    ...config.faqItems,
+                                    {
+                                      question: 'Nova pergunta',
+                                      answer:
+                                        'Escreva aqui uma resposta clara para a cliente.',
+                                    },
+                                  ],
+                                })
+                              }
+                            >
+                              <Plus aria-hidden="true" /> Adicionar pergunta
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

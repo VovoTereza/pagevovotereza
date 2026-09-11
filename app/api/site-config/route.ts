@@ -3,12 +3,20 @@ import { z } from 'zod';
 import { getAdminEmail } from '@/lib/server/admin-auth';
 import { getSiteConfig } from '@/lib/server/site-config';
 import { upsertRows } from '@/lib/server/supabase';
+import { storefrontSectionIds, storefrontVisibilityIds } from '@/lib/catalog';
 
-const optionalUrl = z.string().max(300).refine(
-  (value) => !value || URL.canParse(value),
-  'Informe uma URL válida.',
-);
+const optionalUrl = z
+  .string()
+  .max(300)
+  .refine((value) => !value || URL.canParse(value), 'Informe uma URL válida.');
 const schema = z.object({
+  pageSectionOrder: z
+    .array(z.enum(storefrontSectionIds))
+    .length(storefrontSectionIds.length)
+    .refine((items) => new Set(items).size === storefrontSectionIds.length),
+  hiddenSections: z
+    .array(z.enum(storefrontVisibilityIds))
+    .max(storefrontVisibilityIds.length),
   navLabels: z.array(z.string().min(1).max(40)).length(4),
   heroBadge: z.string().min(2).max(100),
   heroTitle: z.string().min(10).max(180),
@@ -29,11 +37,27 @@ const schema = z.object({
   painEyebrow: z.string().min(2).max(100),
   painTitle: z.string().min(4).max(180),
   painDescription: z.string().min(10).max(360),
-  painItems: z.array(z.object({ title: z.string().min(2).max(100), text: z.string().min(5).max(280) })).min(1).max(6),
+  painItems: z
+    .array(
+      z.object({
+        title: z.string().min(2).max(100),
+        text: z.string().min(5).max(280),
+      }),
+    )
+    .min(1)
+    .max(6),
   contentsEyebrow: z.string().min(2).max(100),
   contentsTitle: z.string().min(4).max(180),
   contentsDescription: z.string().min(10).max(360),
-  contentsItems: z.array(z.object({ title: z.string().min(2).max(100), text: z.string().min(5).max(280) })).min(1).max(8),
+  contentsItems: z
+    .array(
+      z.object({
+        title: z.string().min(2).max(100),
+        text: z.string().min(5).max(280),
+      }),
+    )
+    .min(1)
+    .max(8),
   customerPhotos: z
     .array(
       z.object({
@@ -62,7 +86,15 @@ const schema = z.object({
   commentsEmptyText: z.string().min(5).max(280),
   benefitsEyebrow: z.string().min(2).max(100),
   benefitsTitle: z.string().min(4).max(180),
-  benefitsItems: z.array(z.object({ title: z.string().min(2).max(100), text: z.string().min(5).max(280) })).min(1).max(8),
+  benefitsItems: z
+    .array(
+      z.object({
+        title: z.string().min(2).max(100),
+        text: z.string().min(5).max(280),
+      }),
+    )
+    .min(1)
+    .max(8),
   founderEyebrow: z.string().min(2).max(100),
   founderTitle: z.string().min(4).max(180),
   founderBodyOne: z.string().min(10).max(500),
@@ -78,7 +110,15 @@ const schema = z.object({
   paymentNote: z.string().min(2).max(160),
   faqEyebrow: z.string().min(2).max(100),
   faqTitle: z.string().min(4).max(180),
-  faqItems: z.array(z.object({ question: z.string().min(2).max(180), answer: z.string().min(5).max(600) })).min(1).max(12),
+  faqItems: z
+    .array(
+      z.object({
+        question: z.string().min(2).max(180),
+        answer: z.string().min(5).max(600),
+      }),
+    )
+    .min(1)
+    .max(12),
   footerText: z.string().min(5).max(240),
   footerCopyright: z.string().min(2).max(120),
   facebookUrl: optionalUrl,
@@ -92,10 +132,26 @@ const schema = z.object({
   cartEmptyNote: z.string().min(2).max(180),
   cartBumpEyebrow: z.string().min(2).max(80),
   cartBumpRecipeLabel: z.string().min(2).max(80),
-  cartBumpRecipes: z.array(z.object({ title: z.string().min(2).max(100), text: z.string().min(5).max(300) })).min(1).max(12),
+  cartBumpRecipes: z
+    .array(
+      z.object({
+        title: z.string().min(2).max(100),
+        text: z.string().min(5).max(300),
+      }),
+    )
+    .min(1)
+    .max(12),
   cartOfferEyebrow: z.string().min(2).max(80),
   cartOfferRecipeLabel: z.string().min(2).max(80),
-  cartOfferRecipes: z.array(z.object({ title: z.string().min(2).max(100), text: z.string().min(5).max(300) })).min(1).max(12),
+  cartOfferRecipes: z
+    .array(
+      z.object({
+        title: z.string().min(2).max(100),
+        text: z.string().min(5).max(300),
+      }),
+    )
+    .min(1)
+    .max(12),
   cartAddCtaPrefix: z.string().min(2).max(80),
   cartRemoveText: z.string().min(1).max(40),
   cartBundleItemLabel: z.string().min(1).max(60),
@@ -134,7 +190,11 @@ export async function PUT(request: NextRequest) {
   try {
     await upsertRows(
       'site_settings',
-      { key: 'public_config', value: parsed.data, updated_at: new Date().toISOString() },
+      {
+        key: 'public_config',
+        value: parsed.data,
+        updated_at: new Date().toISOString(),
+      },
       'key',
     );
     return NextResponse.json({ ok: true, config: parsed.data });

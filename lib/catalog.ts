@@ -57,6 +57,29 @@ export type CatalogConfig = {
   testimonials: Testimonial[];
 };
 
+export const storefrontSectionIds = [
+  'hero',
+  'proof',
+  'pain',
+  'contents',
+  'comments',
+  'benefits',
+  'story',
+  'offers',
+  'comparison',
+  'faq',
+] as const;
+export type StorefrontSectionId = (typeof storefrontSectionIds)[number];
+
+export const storefrontVisibilityIds = [
+  'offer',
+  'navigation',
+  ...storefrontSectionIds,
+  'gallery',
+  'footer',
+] as const;
+export type StorefrontVisibilityId = (typeof storefrontVisibilityIds)[number];
+
 export const products: Product[] = [
   {
     id: 'livro-principal',
@@ -186,6 +209,8 @@ export const defaultCatalog: CatalogConfig = {
   testimonials: [],
 };
 export const defaultSiteConfig = {
+  pageSectionOrder: [...storefrontSectionIds] as StorefrontSectionId[],
+  hiddenSections: [] as StorefrontVisibilityId[],
   navLabels: ['Início', 'Para você', 'Nossa história', 'Dúvidas'] as string[],
   heroBadge: 'RECEITAS DE CUIDADO QUE PASSAM DE MÃE PARA FILHA',
   heroTitle: '150 receitas naturais para cuidar de você todos os dias',
@@ -327,13 +352,41 @@ export const defaultSiteConfig = {
   faqEyebrow: 'DÚVIDAS FREQUENTES',
   faqTitle: 'O que você precisa saber antes de comprar',
   faqItems: [
-    { question: 'O produto é físico ou digital?', answer: 'É uma coleção digital. O acesso aos arquivos fica disponível na página do pedido após a confirmação do pagamento.' },
-    { question: 'Consigo abrir no celular?', answer: 'Sim. Os arquivos foram preparados para leitura no celular, tablet ou computador.' },
-    { question: 'Preciso ter experiência com receitas naturais?', answer: 'Não. Os preparos têm linguagem direta, lista de ingredientes e modo de uso para facilitar a consulta.' },
-    { question: 'O pagamento é seguro?', answer: 'Sim. O pagamento é processado pela Stripe e os dados do cartão não passam pelo nosso servidor.' },
-    { question: 'Quando recebo?', answer: 'Após a confirmação do pagamento, os links para baixar os arquivos ficam disponíveis na página do pedido.' },
-    { question: 'Existe conteúdo sobre babosa para os cabelos?', answer: 'Sim. A coleção inclui preparos de uso externo e orientações de cuidado, como fazer teste em uma pequena área antes do uso.' },
-    { question: 'Os cadernos substituem orientação médica ou nutricional?', answer: 'Não. O conteúdo é educativo e reúne usos tradicionais. Gestantes, lactantes e pessoas com condições de saúde ou que usam medicamentos devem conversar com um profissional antes de consumir chás ou mudar a rotina.' },
+    {
+      question: 'O produto é físico ou digital?',
+      answer:
+        'É uma coleção digital. O acesso aos arquivos fica disponível na página do pedido após a confirmação do pagamento.',
+    },
+    {
+      question: 'Consigo abrir no celular?',
+      answer:
+        'Sim. Os arquivos foram preparados para leitura no celular, tablet ou computador.',
+    },
+    {
+      question: 'Preciso ter experiência com receitas naturais?',
+      answer:
+        'Não. Os preparos têm linguagem direta, lista de ingredientes e modo de uso para facilitar a consulta.',
+    },
+    {
+      question: 'O pagamento é seguro?',
+      answer:
+        'Sim. O pagamento é processado pela Stripe e os dados do cartão não passam pelo nosso servidor.',
+    },
+    {
+      question: 'Quando recebo?',
+      answer:
+        'Após a confirmação do pagamento, os links para baixar os arquivos ficam disponíveis na página do pedido.',
+    },
+    {
+      question: 'Existe conteúdo sobre babosa para os cabelos?',
+      answer:
+        'Sim. A coleção inclui preparos de uso externo e orientações de cuidado, como fazer teste em uma pequena área antes do uso.',
+    },
+    {
+      question: 'Os cadernos substituem orientação médica ou nutricional?',
+      answer:
+        'Não. O conteúdo é educativo e reúne usos tradicionais. Gestantes, lactantes e pessoas com condições de saúde ou que usam medicamentos devem conversar com um profissional antes de consumir chás ou mudar a rotina.',
+    },
   ] as { question: string; answer: string }[],
   footerText:
     'Receitas naturais e conhecimentos de família, organizados com cuidado e responsabilidade.',
@@ -350,16 +403,34 @@ export const defaultSiteConfig = {
   cartBumpEyebrow: 'OFERTA ADICIONAL',
   cartBumpRecipeLabel: 'RECEITA DO CADERNO',
   cartBumpRecipes: [
-    { title: 'Pré-lavagem com babosa', text: 'Gel de babosa diluído para aplicar no comprimento dos fios antes da lavagem, com orientação de teste em uma pequena área.' },
-    { title: 'Máscara de babosa e aveia', text: 'Um preparo de uso externo com textura cremosa, tempo de pausa curto e enxágue cuidadoso.' },
-    { title: 'Babosa com óleo vegetal', text: 'Uma mistura simples para o comprimento dos fios, acompanhada de cuidados de aplicação e retirada.' },
+    {
+      title: 'Pré-lavagem com babosa',
+      text: 'Gel de babosa diluído para aplicar no comprimento dos fios antes da lavagem, com orientação de teste em uma pequena área.',
+    },
+    {
+      title: 'Máscara de babosa e aveia',
+      text: 'Um preparo de uso externo com textura cremosa, tempo de pausa curto e enxágue cuidadoso.',
+    },
+    {
+      title: 'Babosa com óleo vegetal',
+      text: 'Uma mistura simples para o comprimento dos fios, acompanhada de cuidados de aplicação e retirada.',
+    },
   ] as { title: string; text: string }[],
   cartOfferEyebrow: 'PARA COMPLETAR',
   cartOfferRecipeLabel: 'RECEITA DO GUIA',
   cartOfferRecipes: [
-    { title: 'Infusão simples de camomila', text: 'Flores secas e água quente, com medidas, tempo de infusão e modo de conservação organizados no guia.' },
-    { title: 'Água aromatizada com gengibre e hortelã', text: 'Um preparo leve com ingredientes frescos e instruções claras de higienização e armazenamento.' },
-    { title: 'Infusão de alecrim com limão', text: 'Uma combinação tradicional apresentada com proporções simples e observações importantes de consumo.' },
+    {
+      title: 'Infusão simples de camomila',
+      text: 'Flores secas e água quente, com medidas, tempo de infusão e modo de conservação organizados no guia.',
+    },
+    {
+      title: 'Água aromatizada com gengibre e hortelã',
+      text: 'Um preparo leve com ingredientes frescos e instruções claras de higienização e armazenamento.',
+    },
+    {
+      title: 'Infusão de alecrim com limão',
+      text: 'Uma combinação tradicional apresentada com proporções simples e observações importantes de consumo.',
+    },
   ] as { title: string; text: string }[],
   cartAddCtaPrefix: 'ADICIONAR POR',
   cartRemoveText: 'Remover',
@@ -367,7 +438,8 @@ export const defaultSiteConfig = {
   cartProductItemLabel: 'Produto digital',
   cartSubtotalLabel: 'Subtotal',
   cartSavingsLabel: 'Economia neste pedido',
-  cartSecurityText: 'Pagamento seguro. Produto digital. Entrega após confirmação.',
+  cartSecurityText:
+    'Pagamento seguro. Produto digital. Entrega após confirmação.',
   cartCheckoutCtaText: 'IR PARA O PAGAMENTO',
   cartCheckoutLoadingText: 'PREPARANDO PAGAMENTO...',
   seoTitle: 'Vovó Tereza | Receitas naturais e autocuidado',

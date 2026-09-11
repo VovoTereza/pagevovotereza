@@ -52,6 +52,7 @@ import {
   formatMoney,
   type CatalogConfig,
   type PublicSiteConfig,
+  type StorefrontSectionId,
 } from '@/lib/catalog';
 import { getAnalyticsContext, sendAnalytics } from '@/lib/client/analytics';
 
@@ -561,350 +562,291 @@ export function Storefront({
         viewport: { once: true, margin: '-80px' },
         transition: { duration: 0.55 },
       };
+  const isSectionVisible = (id: string) =>
+    !config.hiddenSections.includes(
+      id as (typeof config.hiddenSections)[number],
+    );
+  const sectionLayout = (id: StorefrontSectionId) => ({
+    order: config.pageSectionOrder.indexOf(id),
+  });
 
   return (
     <div className="site-shell">
       <a href="#conteudo" className="skip-link">
         Pular para o conteúdo
       </a>
-      <div className="urgency" data-editor-field="urgencyText">
-        {config.urgencyText}
-      </div>
-      <header className="site-header">
-        <Link
-          href="/receitas"
-          className="brand"
-          aria-label="Vovó Tereza, página inicial"
-        >
-          <BrandLogo priority />
-        </Link>
-        <nav
-          className="desktop-nav"
-          aria-label="Navegação principal"
-          data-editor-field="navLabels"
-        >
-          <a href="#livro">{config.navLabels[0]}</a>
-          <a href="#para-voce">{config.navLabels[1]}</a>
-          <a href="#historia">{config.navLabels[2]}</a>
-          <a href="#duvidas">{config.navLabels[3]}</a>
-        </nav>
-        <div className="header-actions">
-          <button
-            className="icon-button"
-            onClick={openCart}
-            aria-label={`Abrir carrinho com ${cart.length} itens`}
-          >
-            <IconsaxBag />
-            {cart.length > 0 && <span>{cart.length}</span>}
-          </button>
-          <button
-            className="icon-button mobile-only"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Abrir menu"
-          >
-            <IconsaxMenu />
-          </button>
+      {isSectionVisible('offer') && (
+        <div className="urgency" data-editor-field="urgencyText">
+          {config.urgencyText}
         </div>
-        {menuOpen && (
-          <nav className="mobile-nav">
-            <a href="#livro" onClick={() => setMenuOpen(false)}>
-              {config.navLabels[0]}
-            </a>
-            <a href="#ofertas" onClick={() => setMenuOpen(false)}>
-              {config.navLabels[1]}
-            </a>
-            <a href="#duvidas" onClick={() => setMenuOpen(false)}>
-              {config.navLabels[3]}
-            </a>
+      )}
+      {isSectionVisible('navigation') && (
+        <header className="site-header">
+          <Link
+            href="/receitas"
+            className="brand"
+            aria-label="Vovó Tereza, página inicial"
+          >
+            <BrandLogo priority />
+          </Link>
+          <nav
+            className="desktop-nav"
+            aria-label="Navegação principal"
+            data-editor-field="navLabels"
+          >
+            <a href="#livro">{config.navLabels[0]}</a>
+            <a href="#para-voce">{config.navLabels[1]}</a>
+            <a href="#historia">{config.navLabels[2]}</a>
+            <a href="#duvidas">{config.navLabels[3]}</a>
           </nav>
+          <div className="header-actions">
+            <button
+              className="icon-button"
+              onClick={openCart}
+              aria-label={`Abrir carrinho com ${cart.length} itens`}
+            >
+              <IconsaxBag />
+              {cart.length > 0 && <span>{cart.length}</span>}
+            </button>
+            <button
+              className="icon-button mobile-only"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Abrir menu"
+            >
+              <IconsaxMenu />
+            </button>
+          </div>
+          {menuOpen && (
+            <nav className="mobile-nav">
+              <a href="#livro" onClick={() => setMenuOpen(false)}>
+                {config.navLabels[0]}
+              </a>
+              <a href="#ofertas" onClick={() => setMenuOpen(false)}>
+                {config.navLabels[1]}
+              </a>
+              <a href="#duvidas" onClick={() => setMenuOpen(false)}>
+                {config.navLabels[3]}
+              </a>
+            </nav>
+          )}
+        </header>
+      )}
+      <main id="conteudo" className="storefront-main">
+        {isSectionVisible('hero') && (
+          <section className="hero" id="livro" style={sectionLayout('hero')}>
+            <motion.div className="hero-copy" {...fade}>
+              <p className="eyebrow" data-editor-field="heroBadge">
+                {config.heroBadge}
+              </p>
+              <h1 data-editor-field="heroTitle">
+                {config.heroTitle.startsWith('150 receitas naturais') ? (
+                  <>
+                    <span className="hero-title-accent">
+                      150 receitas naturais
+                    </span>
+                    {config.heroTitle.slice('150 receitas naturais'.length)}
+                  </>
+                ) : (
+                  config.heroTitle
+                )}
+              </h1>
+              <p className="hero-subtitle" data-editor-field="heroSubtitle">
+                {config.heroSubtitle}
+              </p>
+              <ul
+                className="hero-benefits"
+                aria-label="Destaques dos cadernos"
+                data-editor-field="heroBenefits"
+              >
+                <li>
+                  <Leaf aria-hidden="true" /> {config.heroBenefits[0]}
+                </li>
+                <li>
+                  <Heart aria-hidden="true" /> {config.heroBenefits[1]}
+                </li>
+                <li>
+                  <NotebookPen aria-hidden="true" /> {config.heroBenefits[2]}
+                </li>
+                <li>
+                  <Check aria-hidden="true" /> {config.heroBenefits[3]}
+                </li>
+              </ul>
+              <div className="hero-price" data-editor-field="heroPrice">
+                <small>{config.heroPriceLabel}</small>
+                <strong>{formatMoney(bundles[0].price)}</strong>
+                <span>{config.heroPriceSuffix}</span>
+              </div>
+              <a
+                href="#ofertas"
+                className="primary-button"
+                data-purchase-cta
+                data-editor-field="ctaText"
+                onClick={() => track('hero_cta_click')}
+              >
+                {config.ctaText}
+              </a>
+              <p className="microcopy" data-editor-field="heroMicrocopy">
+                <LockKeyhole /> {config.heroMicrocopy}
+              </p>
+            </motion.div>
+            <motion.div
+              className="hero-visual"
+              data-editor-field="heroImage"
+              {...fade}
+            >
+              {config.heroImage && (
+                <Image
+                  src={config.heroImage}
+                  alt="Vovó Tereza em uma cozinha brasileira com chás, babosa e seu caderno de receitas"
+                  fill
+                  priority
+                  sizes="(max-width: 900px) 100vw, 52vw"
+                  unoptimized={config.heroImage.startsWith('/api/media')}
+                />
+              )}
+              <div className="book-card" data-editor-field="heroCard">
+                <BookOpen />
+                <span>{config.heroCardTitle}</span>
+                <small>{config.heroCardSubtitle}</small>
+              </div>
+            </motion.div>
+          </section>
         )}
-      </header>
-      <main id="conteudo">
-        <section className="hero" id="livro">
-          <motion.div className="hero-copy" {...fade}>
-            <p className="eyebrow" data-editor-field="heroBadge">
-              {config.heroBadge}
-            </p>
-            <h1 data-editor-field="heroTitle">
-              {config.heroTitle.startsWith('150 receitas naturais') ? (
-                <>
-                  <span className="hero-title-accent">
-                    150 receitas naturais
-                  </span>
-                  {config.heroTitle.slice('150 receitas naturais'.length)}
-                </>
-              ) : (
-                config.heroTitle
-              )}
-            </h1>
-            <p className="hero-subtitle" data-editor-field="heroSubtitle">
-              {config.heroSubtitle}
-            </p>
-            <ul
-              className="hero-benefits"
-              aria-label="Destaques dos cadernos"
-              data-editor-field="heroBenefits"
-            >
-              <li>
-                <Leaf aria-hidden="true" /> {config.heroBenefits[0]}
-              </li>
-              <li>
-                <Heart aria-hidden="true" /> {config.heroBenefits[1]}
-              </li>
-              <li>
-                <NotebookPen aria-hidden="true" /> {config.heroBenefits[2]}
-              </li>
-              <li>
-                <Check aria-hidden="true" /> {config.heroBenefits[3]}
-              </li>
-            </ul>
-            <div className="hero-price" data-editor-field="heroPrice">
-              <small>{config.heroPriceLabel}</small>
-              <strong>{formatMoney(bundles[0].price)}</strong>
-              <span>{config.heroPriceSuffix}</span>
-            </div>
-            <a
-              href="#ofertas"
-              className="primary-button"
-              data-purchase-cta
-              data-editor-field="ctaText"
-              onClick={() => track('hero_cta_click')}
-            >
-              {config.ctaText}
-            </a>
-            <p className="microcopy" data-editor-field="heroMicrocopy">
-              <LockKeyhole /> {config.heroMicrocopy}
-            </p>
-          </motion.div>
-          <motion.div
-            className="hero-visual"
-            data-editor-field="heroImage"
-            {...fade}
+        {isSectionVisible('proof') && (
+          <section
+            className="proof-strip"
+            style={sectionLayout('proof')}
+            aria-label="Características da coleção"
+            data-editor-field="proofItems"
           >
-            {config.heroImage && (
-              <Image
-                src={config.heroImage}
-                alt="Vovó Tereza em uma cozinha brasileira com chás, babosa e seu caderno de receitas"
-                fill
-                priority
-                sizes="(max-width: 900px) 100vw, 52vw"
-                unoptimized={config.heroImage.startsWith('/api/media')}
-              />
-            )}
-            <div className="book-card" data-editor-field="heroCard">
-              <BookOpen />
-              <span>{config.heroCardTitle}</span>
-              <small>{config.heroCardSubtitle}</small>
-            </div>
-          </motion.div>
-        </section>
-        <section
-          className="proof-strip"
-          aria-label="Características da coleção"
-          data-editor-field="proofItems"
-        >
-          <div className="proof-track">
-            {[false, true].map((duplicate) => (
-              <div
-                className="proof-group"
-                key={String(duplicate)}
-                aria-hidden={duplicate || undefined}
-              >
-                <span>
-                  <IconsaxArchiveBook aria-hidden="true" />
-                  {config.proofItems[0]}
-                </span>
-                <span>
-                  <IconsaxMobile aria-hidden="true" />
-                  {config.proofItems[1]}
-                </span>
-                <span>
-                  <IconsaxCardTick aria-hidden="true" />
-                  {config.proofItems[2]}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-        <section className="pain-section" id="para-voce">
-          <motion.div
-            className="section-heading"
-            {...fade}
-            data-editor-field="painHeading"
-          >
-            <p className="eyebrow">{config.painEyebrow}</p>
-            <h2>{config.painTitle}</h2>
-            <p>{config.painDescription}</p>
-          </motion.div>
-          <div className="pain-grid" data-editor-field="painItems">
-            {config.painItems.map(({ title, text }, index) => (
-              <motion.article className="pain-card" key={title} {...fade}>
-                <span>0{index + 1}</span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </motion.article>
-            ))}
-          </div>
-        </section>
-        <section className="collection-contents-section" id="recebe">
-          <motion.div
-            className="section-heading"
-            {...fade}
-            data-editor-field="contentsHeading"
-          >
-            <p className="eyebrow">{config.contentsEyebrow}</p>
-            <h2>{config.contentsTitle}</h2>
-            <p>{config.contentsDescription}</p>
-          </motion.div>
-          <div className="recipe-grid" data-editor-field="contentsItems">
-            {config.contentsItems.map(({ title, text }, index) => (
-              <motion.article key={title} className="recipe-card" {...fade}>
-                <span>0{index + 1}</span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </motion.article>
-            ))}
-          </div>
-        </section>
-        <section
-          className={`customer-comments${activeTestimonials.length ? '' : ' is-empty'}`}
-          aria-labelledby="comments-title"
-        >
-          <div className="comments-heading">
-            <h2 id="comments-title" data-editor-field="commentsTitle">
-              {config.commentsTitle}
-            </h2>
-            <div
-              className={`comments-score${activeTestimonials.length ? '' : ' comments-score-empty'}`}
-              data-editor-field="commentsEyebrow"
-            >
-              {activeTestimonials.length > 0 ? (
-                <span aria-hidden="true">
-                  {Array.from({ length: 5 }, (_, index) => (
-                    <Star key={index} />
-                  ))}
-                </span>
-              ) : (
-                <ShieldCheck aria-hidden="true" />
-              )}
-              {activeTestimonials.length > 0 && (
-                <strong>
-                  {averageTestimonialRating.toFixed(1).replace('.', ',')}
-                </strong>
-              )}
-              <span>{config.commentsEyebrow}</span>
-              {activeTestimonials.length > 0 && (
-                <span>
-                  · {activeTestimonials.length}{' '}
-                  {activeTestimonials.length === 1 ? 'relato' : 'relatos'}
-                </span>
-              )}
-            </div>
-            <p data-editor-field="commentsSubtitle">
-              {config.commentsSubtitle}
-            </p>
-          </div>
-          {activeTestimonials.length ? (
-            <div
-              className={`comments-carousel${
-                activeTestimonials.length === 1 ? ' is-single' : ''
-              }`}
-            >
-              {activeTestimonials.length > 1 && (
-                <div className="comments-controls">
-                  <button
-                    type="button"
-                    className="comments-previous"
-                    aria-label="Ver comentários anteriores"
-                    onClick={() =>
-                      commentRailRef.current?.scrollBy({
-                        left: -420,
-                        behavior: reduceMotion ? 'auto' : 'smooth',
-                      })
-                    }
-                  >
-                    <ChevronLeft />
-                  </button>
-                  <button
-                    type="button"
-                    className="comments-next"
-                    aria-label="Ver próximos comentários"
-                    onClick={() =>
-                      commentRailRef.current?.scrollBy({
-                        left: 420,
-                        behavior: reduceMotion ? 'auto' : 'smooth',
-                      })
-                    }
-                  >
-                    <ChevronRight />
-                  </button>
-                </div>
-              )}
-              <div
-                className="comments-rail"
-                ref={commentRailRef}
-                data-editor-field="commentsList"
-                onMouseEnter={() => {
-                  commentAutoPausedRef.current = true;
-                }}
-                onMouseLeave={() => {
-                  commentAutoPausedRef.current = false;
-                }}
-                onFocus={() => {
-                  commentAutoPausedRef.current = true;
-                }}
-                onBlur={() => {
-                  commentAutoPausedRef.current = false;
-                }}
-              >
-                <div className="comments-group">
-                  {activeTestimonials.map((item) => (
-                    <article className="comment-card" key={item.id}>
-                      <div className="comment-author">
-                        <strong>{item.name}</strong>
-                        {item.headline && <b>{item.headline}</b>}
-                        {item.city && <span>{item.city}</span>}
-                      </div>
-                      <div
-                        className="comment-rating"
-                        aria-label={`${item.rating} de 5 estrelas`}
-                      >
-                        {Array.from({ length: 5 }, (_, index) => (
-                          <Star
-                            key={index}
-                            aria-hidden="true"
-                            className={index < item.rating ? 'filled' : ''}
-                          />
-                        ))}
-                      </div>
-                      <p>{item.text}</p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <>
-              <output
-                className="comments-public-empty"
-                data-editor-field="commentsEmpty"
-              >
-                <MessageSquareQuote aria-hidden="true" />
-                <div>
-                  <strong>{config.commentsEmptyTitle}</strong>
-                  <p>{config.commentsEmptyText}</p>
-                </div>
-              </output>
-              {isEditorPreview && (
+            <div className="proof-track">
+              {[false, true].map((duplicate) => (
                 <div
-                  className="comments-carousel comments-empty-carousel"
-                  data-editor-field="commentsList"
+                  className="proof-group"
+                  key={String(duplicate)}
+                  aria-hidden={duplicate || undefined}
                 >
+                  <span>
+                    <IconsaxArchiveBook aria-hidden="true" />
+                    {config.proofItems[0]}
+                  </span>
+                  <span>
+                    <IconsaxMobile aria-hidden="true" />
+                    {config.proofItems[1]}
+                  </span>
+                  <span>
+                    <IconsaxCardTick aria-hidden="true" />
+                    {config.proofItems[2]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+        {isSectionVisible('pain') && (
+          <section
+            className="pain-section"
+            id="para-voce"
+            style={sectionLayout('pain')}
+          >
+            <motion.div
+              className="section-heading"
+              {...fade}
+              data-editor-field="painHeading"
+            >
+              <p className="eyebrow">{config.painEyebrow}</p>
+              <h2>{config.painTitle}</h2>
+              <p>{config.painDescription}</p>
+            </motion.div>
+            <div className="pain-grid" data-editor-field="painItems">
+              {config.painItems.map(({ title, text }, index) => (
+                <motion.article className="pain-card" key={title} {...fade}>
+                  <span>0{index + 1}</span>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </motion.article>
+              ))}
+            </div>
+          </section>
+        )}
+        {isSectionVisible('contents') && (
+          <section
+            className="collection-contents-section"
+            id="recebe"
+            style={sectionLayout('contents')}
+          >
+            <motion.div
+              className="section-heading"
+              {...fade}
+              data-editor-field="contentsHeading"
+            >
+              <p className="eyebrow">{config.contentsEyebrow}</p>
+              <h2>{config.contentsTitle}</h2>
+              <p>{config.contentsDescription}</p>
+            </motion.div>
+            <div className="recipe-grid" data-editor-field="contentsItems">
+              {config.contentsItems.map(({ title, text }, index) => (
+                <motion.article key={title} className="recipe-card" {...fade}>
+                  <span>0{index + 1}</span>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </motion.article>
+              ))}
+            </div>
+          </section>
+        )}
+        {isSectionVisible('comments') && (
+          <section
+            className={`customer-comments${activeTestimonials.length ? '' : ' is-empty'}`}
+            style={sectionLayout('comments')}
+            aria-labelledby="comments-title"
+          >
+            <div className="comments-heading">
+              <h2 id="comments-title" data-editor-field="commentsTitle">
+                {config.commentsTitle}
+              </h2>
+              <div
+                className={`comments-score${activeTestimonials.length ? '' : ' comments-score-empty'}`}
+                data-editor-field="commentsEyebrow"
+              >
+                {activeTestimonials.length > 0 ? (
+                  <span aria-hidden="true">
+                    {Array.from({ length: 5 }, (_, index) => (
+                      <Star key={index} />
+                    ))}
+                  </span>
+                ) : (
+                  <ShieldCheck aria-hidden="true" />
+                )}
+                {activeTestimonials.length > 0 && (
+                  <strong>
+                    {averageTestimonialRating.toFixed(1).replace('.', ',')}
+                  </strong>
+                )}
+                <span>{config.commentsEyebrow}</span>
+                {activeTestimonials.length > 0 && (
+                  <span>
+                    · {activeTestimonials.length}{' '}
+                    {activeTestimonials.length === 1 ? 'relato' : 'relatos'}
+                  </span>
+                )}
+              </div>
+              <p data-editor-field="commentsSubtitle">
+                {config.commentsSubtitle}
+              </p>
+            </div>
+            {activeTestimonials.length ? (
+              <div
+                className={`comments-carousel${
+                  activeTestimonials.length === 1 ? ' is-single' : ''
+                }`}
+              >
+                {activeTestimonials.length > 1 && (
                   <div className="comments-controls">
                     <button
                       type="button"
                       className="comments-previous"
-                      aria-label="Ver espaços anteriores"
+                      aria-label="Ver comentários anteriores"
                       onClick={() =>
                         commentRailRef.current?.scrollBy({
                           left: -420,
@@ -917,7 +859,7 @@ export function Storefront({
                     <button
                       type="button"
                       className="comments-next"
-                      aria-label="Ver próximos espaços"
+                      aria-label="Ver próximos comentários"
                       onClick={() =>
                         commentRailRef.current?.scrollBy({
                           left: 420,
@@ -928,256 +870,371 @@ export function Storefront({
                       <ChevronRight />
                     </button>
                   </div>
-                  <div
-                    className="comments-rail"
-                    ref={commentRailRef}
-                    onMouseEnter={() => {
-                      commentAutoPausedRef.current = true;
-                    }}
-                    onMouseLeave={() => {
-                      commentAutoPausedRef.current = false;
-                    }}
-                  >
-                    <div className="comments-group">
-                      {Array.from({ length: 4 }, (_, index) => (
-                        <article
-                          className="comment-card comment-card-placeholder"
-                          key={index}
-                        >
-                          <MessageSquareQuote aria-hidden="true" />
-                          <strong>Espaço para comentário autorizado</strong>
-                          <div className="comment-rating" aria-hidden="true">
-                            {Array.from({ length: 5 }, (_, starIndex) => (
-                              <Star className="filled" key={starIndex} />
-                            ))}
-                          </div>
-                          <p>
-                            Cadastre um relato real no painel para substituir
-                            este espaço de edição.
-                          </p>
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-        <section className="benefits">
-          <motion.div {...fade} data-editor-field="benefitsHeading">
-            <p className="eyebrow">{config.benefitsEyebrow}</p>
-            <h2>{config.benefitsTitle}</h2>
-          </motion.div>
-          <div className="benefit-list" data-editor-field="benefitsItems">
-            {config.benefitsItems.map(({ title, text }, i) => (
-              <motion.div key={title} {...fade}>
-                <span>{i + 1}</span>
-                <div>
-                  <h3>{title}</h3>
-                  <p>{text}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-        <motion.section className="founder-story" id="historia" {...fade}>
-          <div className="founder-image" data-editor-field="founderImage">
-            {config.founderImage && (
-              <Image
-                src={config.founderImage}
-                alt="Vovó Tereza escrevendo receitas naturais em seu caderno na cozinha"
-                fill
-                sizes="(max-width: 900px) 100vw, 50vw"
-                unoptimized={config.founderImage.startsWith('/api/media')}
-              />
-            )}
-          </div>
-          <div className="founder-copy" data-editor-field="founderContent">
-            <p className="eyebrow">{config.founderEyebrow}</p>
-            <h2>{config.founderTitle}</h2>
-            <p>{config.founderBodyOne}</p>
-            <p>{config.founderBodyTwo}</p>
-            <p className="founder-signature">{config.founderSignature}</p>
-            <a href="#ofertas" className="secondary-button">
-              {config.founderCtaText}
-            </a>
-          </div>
-        </motion.section>
-        <section className="offers" id="ofertas">
-          <BundleSelector
-            bundles={bundles}
-            products={products}
-            testimonials={testimonials}
-            customerPhotos={config.customerPhotos}
-            content={config}
-            value={selectedBundle}
-            onChange={(bundleId) => {
-              setSelectedBundle(bundleId);
-              track('bundle_select', { bundleId });
-            }}
-            onBuy={() => addBundle()}
-          />
-        </section>
-        <section className="collection-comparison">
-          <div className="comparison-layout">
-            <div className="comparison-intro">
-              <p className="eyebrow" data-editor-field="comparisonEyebrow">
-                {config.comparisonEyebrow}
-              </p>
-              <h2 data-editor-field="comparisonTitle">
-                {config.comparisonTitle}
-              </h2>
-              <p data-editor-field="comparisonDescription">
-                {config.comparisonDescription}
-              </p>
-              <a
-                href="#ofertas"
-                className="comparison-button"
-                data-editor-field="comparisonCtaText"
-                onClick={() => track('comparison_cta_click')}
-              >
-                {config.comparisonCtaText}
-              </a>
-            </div>
-            <table
-              className="comparison-table"
-              aria-label="Comparação entre os cadernos da Vovó Tereza e receitas soltas"
-            >
-              <thead>
-                <tr className="comparison-head">
-                  <th scope="col" data-editor-field="comparisonColumns">
-                    {config.comparisonFeatureLabel}
-                  </th>
-                  <th scope="col" data-editor-field="comparisonColumns">
-                    {config.comparisonPrimaryLabel}
-                  </th>
-                  <th scope="col" data-editor-field="comparisonColumns">
-                    {config.comparisonSecondaryLabel}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {config.comparisonItems.map((item, index) => (
-                  <tr
-                    className="comparison-row"
-                    key={`${index}-${item}`}
-                    data-editor-field="comparisonItems"
-                  >
-                    <th scope="row">
-                      <BadgeCheck aria-hidden="true" /> {item}
-                    </th>
-                    <td className="comparison-yes">
-                      <Check aria-hidden="true" />
-                      <span className="sr-only">Incluído</span>
-                    </td>
-                    <td className="comparison-no">
-                      <X aria-hidden="true" />
-                      <span className="sr-only">Não centralizado</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p
-            className="comparison-responsibility"
-            data-editor-field="comparisonNote"
-          >
-            <ShieldCheck aria-hidden="true" />
-            {config.comparisonNote}
-          </p>
-        </section>
-        <section className="faq" id="duvidas">
-          <div data-editor-field="faqHeading">
-            <p className="eyebrow">{config.faqEyebrow}</p>
-            <h2>{config.faqTitle}</h2>
-          </div>
-          <div data-editor-field="faqItems">
-            {config.faqItems.map(({ question, answer }, i) => (
-              <div className="faq-item" key={question}>
-                <button
-                  aria-expanded={openFaq === i}
-                  onClick={() => {
-                    setOpenFaq(openFaq === i ? null : i);
-                    track('faq_open', { question });
+                )}
+                <div
+                  className="comments-rail"
+                  ref={commentRailRef}
+                  data-editor-field="commentsList"
+                  onMouseEnter={() => {
+                    commentAutoPausedRef.current = true;
+                  }}
+                  onMouseLeave={() => {
+                    commentAutoPausedRef.current = false;
+                  }}
+                  onFocus={() => {
+                    commentAutoPausedRef.current = true;
+                  }}
+                  onBlur={() => {
+                    commentAutoPausedRef.current = false;
                   }}
                 >
-                  <span>{question}</span>
-                  <ChevronDown className={openFaq === i ? 'rotate' : ''} />
-                </button>
-                <AnimatePresence>
-                  {openFaq === i && (
-                    <motion.p
-                      initial={reduceMotion ? {} : { height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={reduceMotion ? {} : { height: 0, opacity: 0 }}
-                    >
-                      {answer}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
+                  <div className="comments-group">
+                    {activeTestimonials.map((item) => (
+                      <article className="comment-card" key={item.id}>
+                        <div className="comment-author">
+                          <strong>{item.name}</strong>
+                          {item.headline && <b>{item.headline}</b>}
+                          {item.city && <span>{item.city}</span>}
+                        </div>
+                        <div
+                          className="comment-rating"
+                          aria-label={`${item.rating} de 5 estrelas`}
+                        >
+                          {Array.from({ length: 5 }, (_, index) => (
+                            <Star
+                              key={index}
+                              aria-hidden="true"
+                              className={index < item.rating ? 'filled' : ''}
+                            />
+                          ))}
+                        </div>
+                        <p>{item.text}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-        </section>
+            ) : (
+              <>
+                <output
+                  className="comments-public-empty"
+                  data-editor-field="commentsEmpty"
+                >
+                  <MessageSquareQuote aria-hidden="true" />
+                  <div>
+                    <strong>{config.commentsEmptyTitle}</strong>
+                    <p>{config.commentsEmptyText}</p>
+                  </div>
+                </output>
+                {isEditorPreview && (
+                  <div
+                    className="comments-carousel comments-empty-carousel"
+                    data-editor-field="commentsList"
+                  >
+                    <div className="comments-controls">
+                      <button
+                        type="button"
+                        className="comments-previous"
+                        aria-label="Ver espaços anteriores"
+                        onClick={() =>
+                          commentRailRef.current?.scrollBy({
+                            left: -420,
+                            behavior: reduceMotion ? 'auto' : 'smooth',
+                          })
+                        }
+                      >
+                        <ChevronLeft />
+                      </button>
+                      <button
+                        type="button"
+                        className="comments-next"
+                        aria-label="Ver próximos espaços"
+                        onClick={() =>
+                          commentRailRef.current?.scrollBy({
+                            left: 420,
+                            behavior: reduceMotion ? 'auto' : 'smooth',
+                          })
+                        }
+                      >
+                        <ChevronRight />
+                      </button>
+                    </div>
+                    <div
+                      className="comments-rail"
+                      ref={commentRailRef}
+                      onMouseEnter={() => {
+                        commentAutoPausedRef.current = true;
+                      }}
+                      onMouseLeave={() => {
+                        commentAutoPausedRef.current = false;
+                      }}
+                    >
+                      <div className="comments-group">
+                        {Array.from({ length: 4 }, (_, index) => (
+                          <article
+                            className="comment-card comment-card-placeholder"
+                            key={index}
+                          >
+                            <MessageSquareQuote aria-hidden="true" />
+                            <strong>Espaço para comentário autorizado</strong>
+                            <div className="comment-rating" aria-hidden="true">
+                              {Array.from({ length: 5 }, (_, starIndex) => (
+                                <Star className="filled" key={starIndex} />
+                              ))}
+                            </div>
+                            <p>
+                              Cadastre um relato real no painel para substituir
+                              este espaço de edição.
+                            </p>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        )}
+        {isSectionVisible('benefits') && (
+          <section className="benefits" style={sectionLayout('benefits')}>
+            <motion.div {...fade} data-editor-field="benefitsHeading">
+              <p className="eyebrow">{config.benefitsEyebrow}</p>
+              <h2>{config.benefitsTitle}</h2>
+            </motion.div>
+            <div className="benefit-list" data-editor-field="benefitsItems">
+              {config.benefitsItems.map(({ title, text }, i) => (
+                <motion.div key={title} {...fade}>
+                  <span>{i + 1}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+        )}
+        {isSectionVisible('story') && (
+          <motion.section
+            className="founder-story"
+            id="historia"
+            style={sectionLayout('story')}
+            {...fade}
+          >
+            <div className="founder-image" data-editor-field="founderImage">
+              {config.founderImage && (
+                <Image
+                  src={config.founderImage}
+                  alt="Vovó Tereza escrevendo receitas naturais em seu caderno na cozinha"
+                  fill
+                  sizes="(max-width: 900px) 100vw, 50vw"
+                  unoptimized={config.founderImage.startsWith('/api/media')}
+                />
+              )}
+            </div>
+            <div className="founder-copy" data-editor-field="founderContent">
+              <p className="eyebrow">{config.founderEyebrow}</p>
+              <h2>{config.founderTitle}</h2>
+              <p>{config.founderBodyOne}</p>
+              <p>{config.founderBodyTwo}</p>
+              <p className="founder-signature">{config.founderSignature}</p>
+              <a href="#ofertas" className="secondary-button">
+                {config.founderCtaText}
+              </a>
+            </div>
+          </motion.section>
+        )}
+        {isSectionVisible('offers') && (
+          <section
+            className="offers"
+            id="ofertas"
+            style={sectionLayout('offers')}
+          >
+            <BundleSelector
+              bundles={bundles}
+              products={products}
+              testimonials={testimonials}
+              customerPhotos={config.customerPhotos}
+              content={config}
+              value={selectedBundle}
+              onChange={(bundleId) => {
+                setSelectedBundle(bundleId);
+                track('bundle_select', { bundleId });
+              }}
+              onBuy={() => addBundle()}
+              showCustomerStories={isSectionVisible('gallery')}
+            />
+          </section>
+        )}
+        {isSectionVisible('comparison') && (
+          <section
+            className="collection-comparison"
+            style={sectionLayout('comparison')}
+          >
+            <div className="comparison-layout">
+              <div className="comparison-intro">
+                <p className="eyebrow" data-editor-field="comparisonEyebrow">
+                  {config.comparisonEyebrow}
+                </p>
+                <h2 data-editor-field="comparisonTitle">
+                  {config.comparisonTitle}
+                </h2>
+                <p data-editor-field="comparisonDescription">
+                  {config.comparisonDescription}
+                </p>
+                <a
+                  href="#ofertas"
+                  className="comparison-button"
+                  data-editor-field="comparisonCtaText"
+                  onClick={() => track('comparison_cta_click')}
+                >
+                  {config.comparisonCtaText}
+                </a>
+              </div>
+              <table
+                className="comparison-table"
+                aria-label="Comparação entre os cadernos da Vovó Tereza e receitas soltas"
+              >
+                <thead>
+                  <tr className="comparison-head">
+                    <th scope="col" data-editor-field="comparisonColumns">
+                      {config.comparisonFeatureLabel}
+                    </th>
+                    <th scope="col" data-editor-field="comparisonColumns">
+                      {config.comparisonPrimaryLabel}
+                    </th>
+                    <th scope="col" data-editor-field="comparisonColumns">
+                      {config.comparisonSecondaryLabel}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {config.comparisonItems.map((item, index) => (
+                    <tr
+                      className="comparison-row"
+                      key={`${index}-${item}`}
+                      data-editor-field="comparisonItems"
+                    >
+                      <th scope="row">
+                        <BadgeCheck aria-hidden="true" /> {item}
+                      </th>
+                      <td className="comparison-yes">
+                        <Check aria-hidden="true" />
+                        <span className="sr-only">Incluído</span>
+                      </td>
+                      <td className="comparison-no">
+                        <X aria-hidden="true" />
+                        <span className="sr-only">Não centralizado</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p
+              className="comparison-responsibility"
+              data-editor-field="comparisonNote"
+            >
+              <ShieldCheck aria-hidden="true" />
+              {config.comparisonNote}
+            </p>
+          </section>
+        )}
+        {isSectionVisible('faq') && (
+          <section className="faq" id="duvidas" style={sectionLayout('faq')}>
+            <div data-editor-field="faqHeading">
+              <p className="eyebrow">{config.faqEyebrow}</p>
+              <h2>{config.faqTitle}</h2>
+            </div>
+            <div data-editor-field="faqItems">
+              {config.faqItems.map(({ question, answer }, i) => (
+                <div className="faq-item" key={question}>
+                  <button
+                    aria-expanded={openFaq === i}
+                    onClick={() => {
+                      setOpenFaq(openFaq === i ? null : i);
+                      track('faq_open', { question });
+                    }}
+                  >
+                    <span>{question}</span>
+                    <ChevronDown className={openFaq === i ? 'rotate' : ''} />
+                  </button>
+                  <AnimatePresence>
+                    {openFaq === i && (
+                      <motion.p
+                        initial={reduceMotion ? {} : { height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={reduceMotion ? {} : { height: 0, opacity: 0 }}
+                      >
+                        {answer}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
-      <footer>
-        <div className="brand">
-          <BrandLogo />
-        </div>
-        <p data-editor-field="footerText">{config.footerText}</p>
-        <nav
-          className="social-links"
-          aria-label="Redes sociais da Vovó Tereza"
-          data-editor-field="footerSocial"
-        >
-          <a
-            href={config.facebookUrl}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Vovó Tereza no Facebook"
-            title="Facebook"
+      {isSectionVisible('footer') && (
+        <footer>
+          <div className="brand">
+            <BrandLogo />
+          </div>
+          <p data-editor-field="footerText">{config.footerText}</p>
+          <nav
+            className="social-links"
+            aria-label="Redes sociais da Vovó Tereza"
+            data-editor-field="footerSocial"
           >
-            <IconsaxFacebook aria-hidden="true" />
-          </a>
-          <a
-            href={config.instagramUrl}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Vovó Tereza no Instagram"
-            title="Instagram"
-          >
-            <IconsaxInstagram aria-hidden="true" />
-          </a>
-          <a
-            href={config.tiktokUrl}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Vovó Tereza no TikTok"
-            title="TikTok"
-          >
-            <IconsaxTiktok aria-hidden="true" />
-          </a>
-          <a
-            href={config.youtubeUrl}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Vovó Tereza no YouTube"
-            title="YouTube"
-          >
-            <IconsaxYoutube aria-hidden="true" />
-          </a>
-        </nav>
-        <nav>
-          <Link href="/privacidade">Privacidade</Link>
-          <Link href="/termos">Termos</Link>
-          <Link href="/reembolso">Reembolso</Link>
-        </nav>
-        <small data-editor-field="footerCopyright">
-          © {new Date().getFullYear()} {config.footerCopyright}
-        </small>
-      </footer>
+            <a
+              href={config.facebookUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Vovó Tereza no Facebook"
+              title="Facebook"
+            >
+              <IconsaxFacebook aria-hidden="true" />
+            </a>
+            <a
+              href={config.instagramUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Vovó Tereza no Instagram"
+              title="Instagram"
+            >
+              <IconsaxInstagram aria-hidden="true" />
+            </a>
+            <a
+              href={config.tiktokUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Vovó Tereza no TikTok"
+              title="TikTok"
+            >
+              <IconsaxTiktok aria-hidden="true" />
+            </a>
+            <a
+              href={config.youtubeUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Vovó Tereza no YouTube"
+              title="YouTube"
+            >
+              <IconsaxYoutube aria-hidden="true" />
+            </a>
+          </nav>
+          <nav>
+            <Link href="/privacidade">Privacidade</Link>
+            <Link href="/termos">Termos</Link>
+            <Link href="/reembolso">Reembolso</Link>
+          </nav>
+          <small data-editor-field="footerCopyright">
+            © {new Date().getFullYear()} {config.footerCopyright}
+          </small>
+        </footer>
+      )}
       <AnimatePresence>
         {floatingBuyVisible &&
           selectedBundleData &&
