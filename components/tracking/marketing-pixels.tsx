@@ -32,6 +32,7 @@ type PixelWindow = Window & {
   gtag?: (...args: unknown[]) => void;
   ttq?: TikTokQueue;
   __vovoPixelIds?: Set<string>;
+  __vovoPixelPageViews?: Set<string>;
 };
 
 export type MarketingEventName =
@@ -202,9 +203,18 @@ export function MarketingPixels({
   useEffect(() => {
     const win = window as PixelWindow;
     win.__vovoPixelIds ||= new Set<string>();
+    win.__vovoPixelPageViews ||= new Set<string>();
     initializeMeta(win, metaPixelId.trim());
     initializeGoogle(win, googleAnalyticsId.trim());
     initializeTikTok(win, tiktokPixelId.trim());
+    const pageViewKey = `${location.pathname}:${metaPixelId}:${googleAnalyticsId}:${tiktokPixelId}`;
+    if (
+      (metaPixelId || googleAnalyticsId || tiktokPixelId) &&
+      !win.__vovoPixelPageViews.has(pageViewKey)
+    ) {
+      trackMarketingEvent('page_view');
+      win.__vovoPixelPageViews.add(pageViewKey);
+    }
 
     if (!purchase) return;
     const data = {

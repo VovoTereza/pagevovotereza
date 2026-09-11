@@ -87,7 +87,6 @@ function track(name: string, data: Record<string, unknown> = {}) {
   sendAnalytics(name, data);
   if (
     [
-      'page_view',
       'bundle_add_to_cart',
       'order_bump_accept',
       'cart_offer_accept',
