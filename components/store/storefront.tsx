@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Heart,
   Leaf,
+  ExternalLink,
   LockKeyhole,
   MessageSquareQuote,
   NotebookPen,
@@ -502,6 +503,9 @@ export function Storefront({
             utmTerm: analytics.utmTerm,
             landingUrl: analytics.landingUrl,
             referrer: analytics.referrer,
+            gclid: analytics.gclid,
+            fbclid: analytics.fbclid,
+            ttclid: analytics.ttclid,
           },
           items: cart.map(({ kind, id, quantity, source, offerStage }) => ({
             kind,
@@ -764,7 +768,10 @@ export function Storefront({
                   </span>
                   <span>
                     <IconsaxCardTick aria-hidden="true" />
-                    {config.proofItems[2]}
+                    {config.checkoutMode === 'external' &&
+                    /stripe/i.test(config.proofItems[2])
+                      ? 'Pagamento seguro'
+                      : config.proofItems[2]}
                   </span>
                 </div>
               ))}
@@ -1092,6 +1099,7 @@ export function Storefront({
               }}
               onBuy={() => addBundle()}
               showCustomerStories={isSectionVisible('gallery')}
+              checkoutMode={config.checkoutMode}
             />
           </section>
         )}
@@ -1195,7 +1203,10 @@ export function Storefront({
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={reduceMotion ? {} : { height: 0, opacity: 0 }}
                       >
-                        {answer}
+                        {config.checkoutMode === 'external' &&
+                        /pagamento é processado pela Stripe/i.test(answer)
+                          ? 'Sim. Ao finalizar o pedido, você será direcionada ao ambiente seguro da plataforma de pagamento escolhida.'
+                          : answer}
                       </motion.p>
                     )}
                   </AnimatePresence>
@@ -1696,10 +1707,17 @@ export function Storefront({
                         ? config.cartCheckoutLoadingText
                         : config.cartCheckoutCtaText}
                     </button>
-                    <PaymentMethods
-                      note={config.paymentNote}
-                      securityText={config.paymentSecurityText}
-                    />
+                    {config.checkoutMode === 'stripe' ? (
+                      <PaymentMethods
+                        note={config.paymentNote}
+                        securityText={config.paymentSecurityText}
+                      />
+                    ) : (
+                      <p className="external-payment-note">
+                        <ExternalLink aria-hidden="true" /> O pagamento será
+                        concluído no ambiente seguro da plataforma externa.
+                      </p>
+                    )}
                   </div>
                 </>
               )}

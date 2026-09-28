@@ -10,6 +10,15 @@ const optionalUrl = z
   .max(300)
   .refine((value) => !value || URL.canParse(value), 'Informe uma URL válida.');
 const schema = z.object({
+  checkoutMode: z.enum(['stripe', 'external']),
+  externalCheckoutLinks: z
+    .array(
+      z.object({
+        signature: z.string().min(1).max(500),
+        url: optionalUrl,
+      }),
+    )
+    .max(40),
   pageSectionOrder: z
     .array(z.enum(storefrontSectionIds))
     .length(storefrontSectionIds.length)

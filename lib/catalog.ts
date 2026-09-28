@@ -209,6 +209,8 @@ export const defaultCatalog: CatalogConfig = {
   testimonials: [],
 };
 export const defaultSiteConfig = {
+  checkoutMode: 'stripe' as 'stripe' | 'external',
+  externalCheckoutLinks: [] as { signature: string; url: string }[],
   pageSectionOrder: [...storefrontSectionIds] as StorefrontSectionId[],
   hiddenSections: [] as StorefrontVisibilityId[],
   navLabels: ['Início', 'Para você', 'Nossa história', 'Dúvidas'] as string[],

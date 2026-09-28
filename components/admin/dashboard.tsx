@@ -20,12 +20,14 @@ import {
   ChevronRight,
   CircleDollarSign,
   Columns3,
+  CreditCard,
   FileText,
   Eye,
   EyeOff,
   ImagePlus,
   Images,
   KeyRound,
+  Link2,
   LogOut,
   Menu,
   MailCheck,
@@ -56,6 +58,7 @@ import {
 } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import { buildExternalCheckoutOptions } from '@/lib/external-checkout';
 
 const AnalyticsOverview = dynamic(
   () =>
@@ -385,6 +388,23 @@ export function AdminDashboard({
   const previewFrameRef = useRef<HTMLDivElement>(null);
   const [desktopPreviewScale, setDesktopPreviewScale] = useState(1);
   const [desktopPreviewHeight, setDesktopPreviewHeight] = useState(700);
+  const externalCheckoutOptions = buildExternalCheckoutOptions(catalog);
+  const configuredExternalLinks = externalCheckoutOptions.filter((option) =>
+    config.externalCheckoutLinks.some(
+      (item) => item.signature === option.signature && item.url,
+    ),
+  ).length;
+  function updateExternalCheckoutLink(signature: string, url: string) {
+    setConfig((current) => ({
+      ...current,
+      externalCheckoutLinks: [
+        ...current.externalCheckoutLinks.filter(
+          (item) => item.signature !== signature,
+        ),
+        { signature, url },
+      ],
+    }));
+  }
   function selectEditorField(field: EditorField) {
     const sectionByField: Record<EditorField, EditorSection> = {
       urgencyText: 'offer',
@@ -666,6 +686,16 @@ export function AdminDashboard({
 
   async function saveConfig(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (
+      active === "API's" &&
+      config.checkoutMode === 'external' &&
+      configuredExternalLinks !== externalCheckoutOptions.length
+    ) {
+      setMessage(
+        `Faltam ${externalCheckoutOptions.length - configuredExternalLinks} links para ativar o checkout externo com segurança.`,
+      );
+      return;
+    }
     setSaving(true);
     setMessage('');
     const response = await fetch('/api/site-config', {
@@ -3358,6 +3388,147 @@ export function AdminDashboard({
 
         {active === "API's" && (
           <div className="api-integrations-stack">
+            <form
+              className="admin-section admin-form api-integration-card checkout-routing-card"
+              onSubmit={saveConfig}
+            >
+              <div className="api-provider-heading">
+                <div className="api-provider-identity">
+                  <span className="api-provider-logo checkout-provider-logo">
+                    <CreditCard aria-hidden="true" />
+                  </span>
+                  <div className="api-provider-copy">
+                    <div className="api-provider-title-row">
+                      <h2>Forma de pagamento ativa</h2>
+                      <span className="api-status connected">
+                        {config.checkoutMode === 'stripe'
+                          ? 'Stripe incorporada'
+                          : 'Links externos'}
+                      </span>
+                    </div>
+                    <p className="admin-muted">
+                      Alterne o destino do botão de pagamento sem mudar o
+                      carrinho da página.
+                    </p>
+                  </div>
+                </div>
+                <button className="save-button" disabled={saving} type="submit">
+                  <Save aria-hidden="true" />
+                  {saving ? 'Salvando...' : 'Salvar forma de pagamento'}
+                </button>
+              </div>
+
+              <fieldset className="checkout-provider-options">
+                <legend>Escolha como o cliente vai pagar</legend>
+                <label
+                  aria-label="Usar checkout próprio com Stripe"
+                  className={config.checkoutMode === 'stripe' ? 'selected' : ''}
+                >
+                  <input
+                    type="radio"
+                    name="checkout-mode"
+                    value="stripe"
+                    checked={config.checkoutMode === 'stripe'}
+                    onChange={() =>
+                      setConfig({ ...config, checkoutMode: 'stripe' })
+                    }
+                  />
+                  <span>
+                    <strong>Checkout próprio com Stripe</strong>
+                    <small>
+                      O pagamento abre dentro do carrinho e a confirmação é
+                      automática.
+                    </small>
+                  </span>
+                </label>
+                <label
+                  aria-label="Usar links de checkout externo"
+                  className={
+                    config.checkoutMode === 'external' ? 'selected' : ''
+                  }
+                >
+                  <input
+                    type="radio"
+                    name="checkout-mode"
+                    value="external"
+                    checked={config.checkoutMode === 'external'}
+                    onChange={() =>
+                      setConfig({ ...config, checkoutMode: 'external' })
+                    }
+                  />
+                  <span>
+                    <strong>Links de checkout externo</strong>
+                    <small>
+                      Cada combinação do carrinho abre o link correspondente da
+                      outra plataforma.
+                    </small>
+                  </span>
+                </label>
+              </fieldset>
+
+              <div className="external-checkout-heading">
+                <div>
+                  <strong>Links por combinação</strong>
+                  <span>
+                    {configuredExternalLinks} de{' '}
+                    {externalCheckoutOptions.length} links configurados
+                  </span>
+                </div>
+                <span
+                  className={`external-checkout-progress${configuredExternalLinks === externalCheckoutOptions.length ? ' complete' : ''}`}
+                >
+                  {Math.round(
+                    (configuredExternalLinks / externalCheckoutOptions.length) *
+                      100,
+                  )}
+                  %
+                </span>
+              </div>
+
+              <div className="external-checkout-list">
+                {externalCheckoutOptions.map((option, index) => {
+                  const current = config.externalCheckoutLinks.find(
+                    (item) => item.signature === option.signature,
+                  );
+                  return (
+                    <label key={option.signature}>
+                      <span className="external-checkout-index">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <span className="external-checkout-copy">
+                        <strong>{option.label}</strong>
+                        <small>
+                          {option.detail} · {money(option.total)}
+                        </small>
+                      </span>
+                      <span className="external-checkout-input">
+                        <Link2 aria-hidden="true" />
+                        <input
+                          type="url"
+                          value={current?.url || ''}
+                          onChange={(event) =>
+                            updateExternalCheckoutLink(
+                              option.signature,
+                              event.target.value,
+                            )
+                          }
+                          placeholder="https://checkout.sua-plataforma.com/..."
+                          aria-label={`Link de pagamento para ${option.label}`}
+                        />
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <p className="api-security-note">
+                <KeyRound aria-hidden="true" /> Os parâmetros da campanha são
+                preservados no redirecionamento. A confirmação e entrega da
+                compra externa ficam sob responsabilidade da plataforma do link.
+              </p>
+              {notice}
+            </form>
+
             <form
               className="admin-section admin-form api-integration-card"
               onSubmit={saveStripeIntegration}

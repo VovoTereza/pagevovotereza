@@ -5,6 +5,7 @@ import {
   BookOpen,
   Check,
   Download,
+  ExternalLink,
   ImagePlus,
   LockKeyhole,
   Plus,
@@ -146,6 +147,7 @@ export function BundleSelector({
   onBuy,
   content,
   showCustomerStories = true,
+  checkoutMode = 'stripe',
 }: {
   bundles: Bundle[];
   products: Product[];
@@ -167,6 +169,7 @@ export function BundleSelector({
     cartGalleryTitle: string;
   };
   showCustomerStories?: boolean;
+  checkoutMode?: 'stripe' | 'external';
 }) {
   const chosen = bundles.find((item) => item.id === value) || bundles[0]!;
   const getProduct = (id: string) => products.find((item) => item.id === id);
@@ -342,10 +345,17 @@ export function BundleSelector({
         >
           {content.collectionCtaText} <span>{formatMoney(chosen.price)}</span>
         </button>
-        <PaymentMethods
-          note={content.paymentNote}
-          securityText={content.paymentSecurityText}
-        />
+        {checkoutMode === 'stripe' ? (
+          <PaymentMethods
+            note={content.paymentNote}
+            securityText={content.paymentSecurityText}
+          />
+        ) : (
+          <p className="external-payment-note">
+            <ExternalLink aria-hidden="true" /> O pagamento será concluído no
+            ambiente seguro da plataforma externa.
+          </p>
+        )}
         {showCustomerStories && (
           <CustomerStories
             eyebrow={content.galleryEyebrow}

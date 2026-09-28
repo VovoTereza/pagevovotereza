@@ -12,6 +12,9 @@ export type AnalyticsContext = {
   utmCampaign: string;
   utmContent: string;
   utmTerm: string;
+  gclid: string;
+  fbclid: string;
+  ttclid: string;
 };
 
 const VISITOR_KEY = 'vovo-visitor';
@@ -43,27 +46,46 @@ export function classifyAttribution(url: URL, referrer: string) {
   const paidMedium = /(cpc|ppc|paid|paid_social|display|ads?)/.test(medium);
   const platformSource = `${source} ${referrerHost}`;
   const google = /google/.test(platformSource) || url.searchParams.has('gclid');
-  const platform =
-    /whatsapp|wa\.me|whats/.test(platformSource) ? 'WhatsApp' :
-      /instagram|insta/.test(platformSource) || url.searchParams.has('igshid') ? 'Instagram' :
-        /facebook|(^|\.)fb\.|(^|\s)fb($|\s)/.test(platformSource) || url.searchParams.has('fbclid') ? 'Facebook' :
-          /tiktok/.test(platformSource) || url.searchParams.has('ttclid') ? 'TikTok' :
-            /youtube|youtu\.be/.test(platformSource) ? 'YouTube' :
-              google ? (hasPaidClick || paidMedium ? 'Google Ads' : 'Pesquisa Google') :
-                /bing/.test(platformSource) || url.searchParams.has('msclkid') ? (hasPaidClick || paidMedium ? 'Bing Ads' : 'Pesquisa Bing') :
-                  source ? source : referrerHost ? referrerHost : 'Direto';
+  const platform = /whatsapp|wa\.me|whats/.test(platformSource)
+    ? 'WhatsApp'
+    : /instagram|insta/.test(platformSource) || url.searchParams.has('igshid')
+      ? 'Instagram'
+      : /facebook|(^|\.)fb\.|(^|\s)fb($|\s)/.test(platformSource) ||
+          url.searchParams.has('fbclid')
+        ? 'Facebook'
+        : /tiktok/.test(platformSource) || url.searchParams.has('ttclid')
+          ? 'TikTok'
+          : /youtube|youtu\.be/.test(platformSource)
+            ? 'YouTube'
+            : google
+              ? hasPaidClick || paidMedium
+                ? 'Google Ads'
+                : 'Pesquisa Google'
+              : /bing/.test(platformSource) || url.searchParams.has('msclkid')
+                ? hasPaidClick || paidMedium
+                  ? 'Bing Ads'
+                  : 'Pesquisa Bing'
+                : source
+                  ? source
+                  : referrerHost
+                    ? referrerHost
+                    : 'Direto';
   const isSearch = /(google|bing|yahoo|duckduckgo|ecosia)/.test(referrerHost);
-  const isSocial = /(instagram|facebook|tiktok|youtube|pinterest|x\.com|twitter)/.test(platformSource);
+  const isSocial =
+    /(instagram|facebook|tiktok|youtube|pinterest|x\.com|twitter)/.test(
+      platformSource,
+    );
   const isMessaging = /whatsapp|wa\.me|whats/.test(platformSource);
-  const sourceType = hasPaidClick || paidMedium
-    ? 'paid'
-    : isMessaging
-      ? 'referral'
-      : isSearch || isSocial || Boolean(source)
-        ? 'organic'
-        : !referrerHost
-          ? 'direct'
-          : 'referral';
+  const sourceType =
+    hasPaidClick || paidMedium
+      ? 'paid'
+      : isMessaging
+        ? 'referral'
+        : isSearch || isSocial || Boolean(source)
+          ? 'organic'
+          : !referrerHost
+            ? 'direct'
+            : 'referral';
   return { sourceType, sourcePlatform: platform } as const;
 }
 
@@ -77,9 +99,16 @@ function identifier(storage: Storage, key: string) {
 
 export function getAnalyticsContext(): AnalyticsContext {
   const currentUrl = new URL(window.location.href);
-  const hasExplicitAttribution =
-    ['utm_source', 'source', 'origem', 'gclid', 'fbclid', 'ttclid', 'msclkid', 'igshid']
-      .some((key) => currentUrl.searchParams.has(key));
+  const hasExplicitAttribution = [
+    'utm_source',
+    'source',
+    'origem',
+    'gclid',
+    'fbclid',
+    'ttclid',
+    'msclkid',
+    'igshid',
+  ].some((key) => currentUrl.searchParams.has(key));
   const cached = sessionStorage.getItem(ATTRIBUTION_KEY);
   if (cached && !hasExplicitAttribution) {
     try {
@@ -101,6 +130,9 @@ export function getAnalyticsContext(): AnalyticsContext {
     utmCampaign: url.searchParams.get('utm_campaign') || '',
     utmContent: url.searchParams.get('utm_content') || '',
     utmTerm: url.searchParams.get('utm_term') || '',
+    gclid: url.searchParams.get('gclid') || '',
+    fbclid: url.searchParams.get('fbclid') || '',
+    ttclid: url.searchParams.get('ttclid') || '',
   };
   sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(context));
   return context;
@@ -110,13 +142,35 @@ function deviceInfo() {
   const ua = navigator.userAgent;
   return {
     device: /Mobi|Android|iPhone|iPad/i.test(ua) ? 'Mobile' : 'Desktop',
-    browser: /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) && !/Chrome\//.test(ua) ? 'Safari' : /Firefox\//.test(ua) ? 'Firefox' : 'Outro',
-    os: /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'Outro',
+    browser: /Edg\//.test(ua)
+      ? 'Edge'
+      : /Chrome\//.test(ua)
+        ? 'Chrome'
+        : /Safari\//.test(ua) && !/Chrome\//.test(ua)
+          ? 'Safari'
+          : /Firefox\//.test(ua)
+            ? 'Firefox'
+            : 'Outro',
+    os: /iPhone|iPad/.test(ua)
+      ? 'iOS'
+      : /Android/.test(ua)
+        ? 'Android'
+        : /Windows/.test(ua)
+          ? 'Windows'
+          : /Mac OS/.test(ua)
+            ? 'macOS'
+            : /Linux/.test(ua)
+              ? 'Linux'
+              : 'Outro',
   };
 }
 
-export function sendAnalytics(name: string, payload: Record<string, unknown> = {}) {
-  if (new URLSearchParams(window.location.search).get('editorPreview') === '1') return;
+export function sendAnalytics(
+  name: string,
+  payload: Record<string, unknown> = {},
+) {
+  if (new URLSearchParams(window.location.search).get('editorPreview') === '1')
+    return;
   const context = getAnalyticsContext();
   const isPresenceEvent = name.startsWith('session_');
   if (!isPresenceEvent) {
@@ -138,7 +192,8 @@ export function sendAnalytics(name: string, payload: Record<string, unknown> = {
       language: navigator.language,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       occurredAt: new Date().toISOString(),
-      lastMeaningfulEvent: sessionStorage.getItem(LAST_EVENT_KEY) || 'page_view',
+      lastMeaningfulEvent:
+        sessionStorage.getItem(LAST_EVENT_KEY) || 'page_view',
       lastMeaningfulEventAt:
         sessionStorage.getItem(LAST_EVENT_AT_KEY) || new Date().toISOString(),
     },

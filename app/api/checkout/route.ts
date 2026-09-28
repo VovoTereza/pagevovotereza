@@ -5,6 +5,8 @@ import { getCatalogConfig } from '@/lib/server/catalog-config';
 import { getStripe } from '@/lib/server/stripe';
 import { resolveStripeCredentials } from '@/lib/server/stripe-config';
 import { insertRows, updateRows } from '@/lib/server/supabase';
+import { getSiteConfig } from '@/lib/server/site-config';
+import { checkoutCartSignature } from '@/lib/external-checkout';
 
 const requestSchema = z.object({
   sessionId: z.uuid().optional(),
@@ -20,6 +22,9 @@ const requestSchema = z.object({
       utmTerm: z.string().max(200),
       landingUrl: z.string().max(500),
       referrer: z.string().max(300),
+      gclid: z.string().max(300),
+      fbclid: z.string().max(300),
+      ttclid: z.string().max(300),
     })
     .optional(),
   items: z
@@ -93,6 +98,41 @@ export async function POST(request: NextRequest) {
       0,
     );
     if (total < 100) throw new Error('Total inválido.');
+    const siteConfig = await getSiteConfig();
+    if (siteConfig.checkoutMode === 'external') {
+      const signature = checkoutCartSignature(resolved);
+      const configured = siteConfig.externalCheckoutLinks.find(
+        (item) => item.signature === signature && item.url,
+      );
+      if (!configured)
+        return NextResponse.json(
+          {
+            error:
+              'Esta combinação ainda não possui um link de pagamento configurado.',
+          },
+          { status: 409 },
+        );
+      const target = new URL(configured.url);
+      const attribution = parsed.data.attribution;
+      const params = {
+        utm_source: attribution?.utmSource,
+        utm_medium: attribution?.utmMedium,
+        utm_campaign: attribution?.utmCampaign,
+        utm_content: attribution?.utmContent,
+        utm_term: attribution?.utmTerm,
+        gclid: attribution?.gclid,
+        fbclid: attribution?.fbclid,
+        ttclid: attribution?.ttclid,
+      };
+      for (const [key, value] of Object.entries(params))
+        if (value && !target.searchParams.has(key))
+          target.searchParams.set(key, value);
+      return NextResponse.json({
+        url: target.toString(),
+        external: true,
+        signature,
+      });
+    }
     const { credentials } = await resolveStripeCredentials();
     const embedded = Boolean(credentials?.publishableKey);
     const orderId = crypto.randomUUID();
