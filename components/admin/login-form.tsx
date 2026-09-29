@@ -1,11 +1,20 @@
 'use client';
 import { Eye, EyeOff, LockKeyhole } from 'lucide-react';
-import { SyntheticEvent, useState } from 'react';
+import { SyntheticEvent, useEffect, useState } from 'react';
 
 export function LoginForm() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  useEffect(() => {
+    if (
+      new URLSearchParams(window.location.search).get('reason') ===
+      'session-expired'
+    )
+      setError(
+        'Sua sessão expirou. Entre novamente; os links preenchidos foram preservados.',
+      );
+  }, []);
   async function submit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);

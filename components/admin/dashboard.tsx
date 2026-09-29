@@ -318,6 +318,7 @@ const nav = [
   ['SEO e palavras-chave', Search],
   ['Pixels', Settings],
 ] as const;
+const EXTERNAL_CHECKOUT_DRAFT_KEY = 'vovo-external-checkout-draft';
 const money = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
     value / 100,
@@ -394,17 +395,65 @@ export function AdminDashboard({
       (item) => item.signature === option.signature && item.url,
     ),
   ).length;
-  function updateExternalCheckoutLink(signature: string, url: string) {
-    setConfig((current) => ({
-      ...current,
-      externalCheckoutLinks: [
-        ...current.externalCheckoutLinks.filter(
-          (item) => item.signature !== signature,
-        ),
-        { signature, url },
-      ],
-    }));
+  function persistExternalCheckoutDraft(next: Config) {
+    try {
+      localStorage.setItem(
+        EXTERNAL_CHECKOUT_DRAFT_KEY,
+        JSON.stringify({
+          checkoutMode: next.checkoutMode,
+          externalCheckoutLinks: next.externalCheckoutLinks,
+        }),
+      );
+    } catch {}
   }
+  function updateCheckoutMode(checkoutMode: Config['checkoutMode']) {
+    setConfig((current) => {
+      const next = { ...current, checkoutMode };
+      persistExternalCheckoutDraft(next);
+      return next;
+    });
+  }
+  function updateExternalCheckoutLink(signature: string, url: string) {
+    setConfig((current) => {
+      const next = {
+        ...current,
+        externalCheckoutLinks: [
+          ...current.externalCheckoutLinks.filter(
+            (item) => item.signature !== signature,
+          ),
+          { signature, url },
+        ],
+      };
+      persistExternalCheckoutDraft(next);
+      return next;
+    });
+  }
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(EXTERNAL_CHECKOUT_DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as Partial<
+        Pick<Config, 'checkoutMode' | 'externalCheckoutLinks'>
+      >;
+      if (
+        (draft.checkoutMode === 'stripe' ||
+          draft.checkoutMode === 'external') &&
+        Array.isArray(draft.externalCheckoutLinks)
+      ) {
+        setConfig((current) => ({
+          ...current,
+          checkoutMode: draft.checkoutMode!,
+          externalCheckoutLinks: draft.externalCheckoutLinks!,
+        }));
+        setActive("API's");
+        setMessage(
+          'Seus links foram restaurados. Salve novamente para aplicar.',
+        );
+      }
+    } catch {
+      localStorage.removeItem(EXTERNAL_CHECKOUT_DRAFT_KEY);
+    }
+  }, []);
   function selectEditorField(field: EditorField) {
     const sectionByField: Record<EditorField, EditorSection> = {
       urgencyText: 'offer',
@@ -701,9 +750,15 @@ export function AdminDashboard({
     const response = await fetch('/api/site-config', {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify(config),
     });
     const data = (await response.json()) as { error?: string };
+    if (response.status === 401) {
+      persistExternalCheckoutDraft(config);
+      window.location.assign('/admin/login?reason=session-expired');
+      return;
+    }
     let catalogResponse: Response | null = null;
     if (response.ok && active === 'Editor da página') {
       catalogResponse = await fetch('/api/catalog', {
@@ -712,8 +767,13 @@ export function AdminDashboard({
         body: JSON.stringify(catalog),
       });
     }
+    const saved = response.ok && (!catalogResponse || catalogResponse.ok);
+    if (saved)
+      try {
+        localStorage.removeItem(EXTERNAL_CHECKOUT_DRAFT_KEY);
+      } catch {}
     setMessage(
-      response.ok && (!catalogResponse || catalogResponse.ok)
+      saved
         ? 'Alterações salvas na loja.'
         : data.error || 'Não foi possível salvar todas as alterações.',
     );
@@ -3429,9 +3489,7 @@ export function AdminDashboard({
                     name="checkout-mode"
                     value="stripe"
                     checked={config.checkoutMode === 'stripe'}
-                    onChange={() =>
-                      setConfig({ ...config, checkoutMode: 'stripe' })
-                    }
+                    onChange={() => updateCheckoutMode('stripe')}
                   />
                   <span>
                     <strong>Checkout próprio com Stripe</strong>
@@ -3452,9 +3510,7 @@ export function AdminDashboard({
                     name="checkout-mode"
                     value="external"
                     checked={config.checkoutMode === 'external'}
-                    onChange={() =>
-                      setConfig({ ...config, checkoutMode: 'external' })
-                    }
+                    onChange={() => updateCheckoutMode('external')}
                   />
                   <span>
                     <strong>Links de checkout externo</strong>

@@ -2772,23 +2772,6 @@ footer .brand-logo {
   margin-top: 16px;
   text-align: center;
 }
-.external-payment-note {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin: 12px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.45;
-  text-align: center;
-}
-.external-payment-note svg {
-  width: 17px;
-  height: 17px;
-  flex: 0 0 auto;
-  color: var(--terracotta);
-}
 .payment-methods .payment-security {
   display: flex;
   flex-wrap: wrap;

@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Heart,
   Leaf,
-  ExternalLink,
   LockKeyhole,
   MessageSquareQuote,
   NotebookPen,
@@ -1205,7 +1204,7 @@ export function Storefront({
                       >
                         {config.checkoutMode === 'external' &&
                         /pagamento é processado pela Stripe/i.test(answer)
-                          ? 'Sim. Ao finalizar o pedido, você será direcionada ao ambiente seguro da plataforma de pagamento escolhida.'
+                          ? 'Sim. O pagamento é feito em ambiente protegido e seus dados são processados com segurança.'
                           : answer}
                       </motion.p>
                     )}
@@ -1712,12 +1711,7 @@ export function Storefront({
                         note={config.paymentNote}
                         securityText={config.paymentSecurityText}
                       />
-                    ) : (
-                      <p className="external-payment-note">
-                        <ExternalLink aria-hidden="true" /> O pagamento será
-                        concluído no ambiente seguro da plataforma externa.
-                      </p>
-                    )}
+                    ) : null}
                   </div>
                 </>
               )}

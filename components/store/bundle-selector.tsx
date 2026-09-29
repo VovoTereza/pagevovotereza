@@ -5,7 +5,6 @@ import {
   BookOpen,
   Check,
   Download,
-  ExternalLink,
   ImagePlus,
   LockKeyhole,
   Plus,
@@ -350,12 +349,7 @@ export function BundleSelector({
             note={content.paymentNote}
             securityText={content.paymentSecurityText}
           />
-        ) : (
-          <p className="external-payment-note">
-            <ExternalLink aria-hidden="true" /> O pagamento será concluído no
-            ambiente seguro da plataforma externa.
-          </p>
-        )}
+        ) : null}
         {showCustomerStories && (
           <CustomerStories
             eyebrow={content.galleryEyebrow}
